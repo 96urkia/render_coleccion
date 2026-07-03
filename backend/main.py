@@ -585,7 +585,7 @@ MENUS_ADULTOS = {
     "CDU 9": "CDU 9 · Geografía / Historia",
 }
 MENUS_INFANTIL = {
-    "I0": "I0 · Bebeteca", "I1": "I1 · Hasta 6 años", "I2": "I2 · 7 a 9 años",
+    "I0": "I0 · Bebeteca", "I1": "I1 · Hasta 8 años", "I2": "I2 · 8 a 10 años",
     "I3": "I3 · 10 a 12 años", "JN": "JN · Juvenil",
     "I CDU 0": "I CDU 0 · Generalidades", "I CDU 1": "I CDU 1 · Filosofía", "I CDU 2": "I CDU 2 · Religión",
     "I CDU 3": "I CDU 3 · Ciencias Sociales", "I CDU 4": "I CDU 4 · Lengua", "I CDU 5": "I CDU 5 · Ciencias Puras",
