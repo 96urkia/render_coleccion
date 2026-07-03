@@ -360,8 +360,15 @@ async function apiPostForm(path, formData) {
 
 // ---------- carga inicial: bibliotecas ----------
 async function cargarBibliotecas() {
-  const bibliotecas = await apiGet("/api/bibliotecas");
   const select = $("#select-biblioteca");
+  let bibliotecas;
+  try {
+    bibliotecas = await apiGet("/api/bibliotecas");
+  } catch (e) {
+    console.error("No se pudo cargar /api/bibliotecas:", e);
+    select.innerHTML = `<option value="">(error al cargar bibliotecas — revisa la consola)</option>`;
+    return;
+  }
   select.innerHTML = "";
   Object.entries(bibliotecas).forEach(([nombre, poblacion]) => {
     const opt = document.createElement("option");
