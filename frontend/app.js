@@ -405,6 +405,12 @@ function actualizarPoblacionHint() {
   if (opt) $("#poblacion-hint").textContent = t("poblacion_hint", { n: Number(opt.dataset.poblacion).toLocaleString(state.lang === "eu" ? "eu-ES" : "es-ES") });
 }
 
+// ---------- respeta "reducir movimiento": detiene la bandera animada ----------
+if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  const anim = document.getElementById("flag-wave-anim");
+  if (anim) anim.remove();
+}
+
 // ---------- gestión de archivos ----------
 $$("input[type=file]").forEach(input => {
   input.addEventListener("change", () => {

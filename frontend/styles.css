@@ -66,11 +66,13 @@ body {
 .lang-btn.active { background: var(--spine-green); color: #fff; }
 .lang-btn:hover:not(.active) { background: rgba(47,82,51,0.1); }
 @media (max-width: 700px) { .masthead-inner { flex-wrap: wrap; } }
-.stamp-mark {
-  font-size: 2.4rem;
-  transform: rotate(-6deg);
-  filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.15));
+.flag-mark {
+  display: flex;
+  align-items: flex-end;
+  flex-shrink: 0;
+  filter: drop-shadow(1px 3px 2px rgba(0,0,0,0.2));
 }
+.flag-mark svg { display: block; }
 h1 {
   font-family: var(--font-display);
   font-weight: 700;
