@@ -161,14 +161,19 @@ async function cargarAnalisisGeneral() {
   const tbody = $("#tabla-macro tbody");
   tbody.innerHTML = data.distribucion_macro.map(r => `<tr><td>${r.seccion}</td><td>${r.pct}%</td></tr>`).join("");
 
+  const COLOR_ROTACION = {
+    "Nunca prestado": CHART_COLORS.rojo,
+    "Prestado": CHART_COLORS.oro,
+    "Muy prestado": CHART_COLORS.verde,
+  };
   drawChart("rotacion", "chart-rotacion", "doughnut", {
     labels: data.rotacion.map(r => r.estado),
-    datasets: [{ data: data.rotacion.map(r => r.cantidad), backgroundColor: ["#2F5233", "#B08D3E", "#A23B2E"] }],
+    datasets: [{ data: data.rotacion.map(r => r.cantidad), backgroundColor: data.rotacion.map(r => COLOR_ROTACION[r.estado] || CHART_COLORS.ciruela) }],
   });
 
   drawChart("cronologia", "chart-cronologia", "bar", {
     labels: data.cronologia.labels,
-    datasets: [{ label: "Volúmenes", data: data.cronologia.counts, backgroundColor: "#3E6B8A" }],
+    datasets: [{ label: "Volúmenes", data: data.cronologia.counts, backgroundColor: CHART_COLORS.azulPetroleo }],
   }, { scales: { x: { ticks: { maxRotation: 60, minRotation: 60 } } } });
 }
 
@@ -177,8 +182,8 @@ async function cargarAnalisisGeneral() {
 // ==========================================
 async function cargarAnalisisCdu() {
   const data = await apiGet("/api/analisis/cdu", { session_id: state.sessionId });
-  renderCduBlock(data.adultos, "chart-cdu-adultos", "tabla-cdu-adultos", "cduAdultos", "#3E6B8A");
-  renderCduBlock(data.infantil, "chart-cdu-infantil", "tabla-cdu-infantil", "cduInfantil", "#7B5EA7");
+  renderCduBlock(data.adultos, "chart-cdu-adultos", "tabla-cdu-adultos", "cduAdultos", CHART_COLORS.azulPetroleo);
+  renderCduBlock(data.infantil, "chart-cdu-infantil", "tabla-cdu-infantil", "cduInfantil", CHART_COLORS.marronCuero);
 }
 
 function renderCduBlock(rows, canvasId, tableId, chartKey, color) {
@@ -282,14 +287,29 @@ let ultimaCsvGen = "";
 $("#btn-cargar-gen").addEventListener("click", cargarRecomendacionesGenerales);
 async function cargarRecomendacionesGenerales() {
   const limite = $("#input-limite-gen").value || 50;
-  const data = await apiGet("/api/recomendaciones/generales", { biblioteca: state.biblioteca, limite });
+  const btn = $("#btn-cargar-gen");
+  const errorBox = $("#rec-gen-error");
   const tbody = $("#tabla-rec-gen tbody");
-  tbody.innerHTML = data.resultados.length
-    ? data.resultados.map(r => `<tr class="fila-clicable" data-id-sistema="${r.id_sistema}"><td>${r.id_sistema}</td><td>${r.titulo}</td><td>${r.autor ?? ""}</td><td>${r.anio ?? ""}</td><td>${r.num_bibliotecas}</td></tr>`).join("")
-    : `<tr><td colspan="5">No se encontraron recomendaciones pendientes.</td></tr>`;
+  errorBox.textContent = "";
+  btn.disabled = true;
+  const textoOriginal = btn.textContent;
+  btn.textContent = "Cargando…";
+  tbody.innerHTML = `<tr><td colspan="4">Cargando…</td></tr>`;
+  try {
+    const data = await apiGet("/api/recomendaciones/generales", { biblioteca: state.biblioteca, limite });
+    tbody.innerHTML = data.resultados.length
+      ? data.resultados.map(r => `<tr class="fila-clicable" data-id-sistema="${r.id_sistema}"><td>${r.titulo}</td><td>${r.autor ?? ""}</td><td>${r.anio ?? ""}</td><td>${r.num_bibliotecas}</td></tr>`).join("")
+      : `<tr><td colspan="4">No se encontraron recomendaciones pendientes.</td></tr>`;
 
-  const header = "ID Sistema;Título;Autor;Año;Nº Bibliotecas en Red\n";
-  ultimaCsvGen = header + data.resultados.map(r => [r.id_sistema, r.titulo, r.autor, r.anio, r.num_bibliotecas].join(";")).join("\n");
+    const header = "ID Sistema;Título;Autor;Año;Nº Bibliotecas en Red\n";
+    ultimaCsvGen = header + data.resultados.map(r => [r.id_sistema, r.titulo, r.autor, r.anio, r.num_bibliotecas].join(";")).join("\n");
+  } catch (e) {
+    tbody.innerHTML = `<tr><td colspan="4">No se pudieron cargar las recomendaciones.</td></tr>`;
+    errorBox.textContent = e.message || "Error al cargar las recomendaciones generales.";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
 }
 $("#btn-csv-gen").addEventListener("click", () => {
   if (!ultimaCsvGen) return;
@@ -379,6 +399,7 @@ async function abrirFicha(idSistema) {
   const contenido = $("#ficha-contenido");
   contenido.innerHTML = `<p class="hint">Cargando…</p>`;
   overlay.hidden = false;
+  activarFichaTab("isbd");
 
   try {
     const f = await apiGet(`/api/ficha/${encodeURIComponent(idSistema)}`);
@@ -388,34 +409,70 @@ async function abrirFicha(idSistema) {
   }
 }
 
+function activarFichaTab(tab) {
+  $$(".ficha-nav-tab").forEach(b => b.classList.toggle("active", b.dataset.fichaTab === tab));
+  $$(".ficha-panel", $("#ficha-contenido")).forEach(p => (p.hidden = p.dataset.fichaPanel !== tab));
+}
+$("#ficha-nav-tabs").addEventListener("click", e => {
+  const btn = e.target.closest(".ficha-nav-tab");
+  if (btn) activarFichaTab(btn.dataset.fichaTab);
+});
+
+// Construye el párrafo bibliográfico en formato ISBD:
+// Título : subtítulo / mención de responsabilidad. — Edición. — Lugar : Editorial, Año.
+// Descripción física. — (Serie)
+// Notas.
+function renderIsbdParrafo(f) {
+  const partes = [];
+
+  let linea1 = `<span class="isbd-titulo">${f.titulo ?? "Título no disponible"}</span>`;
+  if (f.autor) linea1 += ` / ${f.autor}`;
+  linea1 += " .";
+  const pubBits = [];
+  if (f.edicion) pubBits.push(f.edicion);
+  const lugarEditorial = [f.lugar, f.editorial].filter(Boolean).join(" : ");
+  if (lugarEditorial || f.anio) pubBits.push([lugarEditorial, f.anio].filter(Boolean).join(", "));
+  if (pubBits.length) linea1 += " — " + pubBits.join(". — ") + ".";
+  partes.push(linea1);
+
+  const fisicaBits = [];
+  if (f.descripcion_fisica) fisicaBits.push(f.descripcion_fisica);
+  if (f.serie) fisicaBits.push(`(${f.serie})`);
+  if (fisicaBits.length) partes.push(fisicaBits.join(" — "));
+
+  (f.notas || []).forEach(n => partes.push(n));
+
+  return partes.join("<br>");
+}
+
 function renderFicha(f) {
-  const linea = (etiqueta, valor) =>
-    valor ? `<div class="ficha-linea"><b>${etiqueta}</b><span>${valor}</span></div>` : "";
+  const materias = (f.materias || []).map((m, i) => `${i + 1}. ${m}.`).join(" ");
 
-  const lineaLista = (etiqueta, valores) =>
-    valores && valores.length
-      ? `<div class="ficha-linea"><b>${etiqueta}</b><ul class="ficha-lista">${valores.map(v => `<li>${v}</li>`).join("")}</ul></div>`
-      : "";
-
-  const camposExtra = Object.entries(f.campos || {})
-    .map(([etiqueta, valores]) => lineaLista(etiqueta, valores))
+  const sucursalesFilas = (f.ejemplares || [])
+    .map(ej => `<tr><td>${ej.biblioteca ?? ""}</td><td>${ej.seccion ?? ""}</td><td>${ej.signatura ?? "s/sig."}</td><td>${ej.codigo_barras ?? ""}</td></tr>`)
     .join("");
 
-  const ejemplares = (f.ejemplares || [])
-    .map(ej => `<div class="ficha-signatura-item">${ej.biblioteca ?? ""} · ${ej.seccion ?? ""} · ${ej.signatura ?? "s/sig."}</div>`)
-    .join("") || `<p class="hint">Sin ejemplares localizados en la red.</p>`;
-
   return `
-    <p class="ficha-titulo">${f.titulo ?? "Título no disponible"}</p>
-    <p class="ficha-autor">${f.autor ?? "Autor desconocido"}</p>
-    ${linea("ID sistema", f.id_sistema)}
-    ${linea("ISBN", f.isbn)}
-    ${linea("Editorial", f.editorial)}
-    ${linea("Año", f.anio)}
-    ${linea("CDU", f.cdu)}
-    ${camposExtra}
-    ${lineaLista("Materias", f.materias)}
-    <div class="ficha-linea"><b>Localización</b><div>${ejemplares}</div></div>
+    <div class="ficha-panel" data-ficha-panel="isbd">
+      <div class="isbd-card">
+        ${f.cdu ? `<div class="isbd-signatura">${f.cdu}</div>` : ""}
+        ${f.autor ? `<div class="isbd-autor">${f.autor}</div>` : ""}
+        <div class="isbd-parrafo">${renderIsbdParrafo(f)}</div>
+        ${materias ? `<div class="isbd-materias">${materias}</div>` : ""}
+        ${f.isbn ? `<div class="isbd-isbn">ISBN ${f.isbn}</div>` : ""}
+        <p class="isbd-nota-sistema">Ficha generada automáticamente a partir del registro MARC de la red.</p>
+      </div>
+    </div>
+    <div class="ficha-panel" data-ficha-panel="sucursales" hidden>
+      ${
+        sucursalesFilas
+          ? `<div class="table-wrap"><table class="ledger-table sucursales-table">
+               <thead><tr><th>Biblioteca</th><th>Sección</th><th>Signatura</th><th>Código de barras</th></tr></thead>
+               <tbody>${sucursalesFilas}</tbody>
+             </table></div>`
+          : `<p class="hint">Sin ejemplares localizados en la red.</p>`
+      }
+    </div>
   `;
 }
 
@@ -427,6 +484,16 @@ document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("#ficha-overlay").hidden) $("#ficha-overlay").hidden = true;
 });
 
+// ---------- paleta de gráficos: coherente con la estética "fichero de biblioteca" ----------
+const CHART_COLORS = {
+  verde: "#2F5233",
+  oro: "#B08D3E",
+  rojo: "#A23B2E",
+  azulPetroleo: "#3E6B72",
+  marronCuero: "#8C6238",
+  ciruela: "#6B4F6B",
+};
+
 // ---------- helper de gráficos ----------
 function drawChart(key, canvasId, type, data, extraOptions = {}) {
   const ctx = $(`#${canvasId}`);
@@ -437,6 +504,7 @@ function drawChart(key, canvasId, type, data, extraOptions = {}) {
     data,
     options: {
       responsive: true,
+      maintainAspectRatio: false,
       plugins: { legend: { display: type === "doughnut" } },
       font: { family: "Public Sans" },
       ...extraOptions,

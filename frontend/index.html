@@ -104,25 +104,25 @@
         <div class="chart-grid">
           <div class="chart-card">
             <h3>Nivel de rotación física</h3>
-            <canvas id="chart-rotacion"></canvas>
+            <div class="chart-canvas-wrap"><canvas id="chart-rotacion"></canvas></div>
           </div>
           <div class="chart-card">
             <h3>Cronología de ediciones</h3>
-            <canvas id="chart-cronologia"></canvas>
+            <div class="chart-canvas-wrap"><canvas id="chart-cronologia"></canvas></div>
           </div>
         </div>
       </div>
 
       <div class="sub-panel" data-subpanel="cdu" hidden>
         <h3>Sección adultos</h3>
-        <canvas id="chart-cdu-adultos" class="bar-canvas"></canvas>
+        <div class="chart-canvas-wrap chart-canvas-wrap--wide"><canvas id="chart-cdu-adultos"></canvas></div>
         <table class="ledger-table" id="tabla-cdu-adultos">
           <thead><tr><th>Categoría / CDU</th><th>Volúmenes</th><th>% Uso</th><th>Año medio</th></tr></thead>
           <tbody></tbody>
         </table>
 
         <h3>Sección infantil / juvenil</h3>
-        <canvas id="chart-cdu-infantil" class="bar-canvas"></canvas>
+        <div class="chart-canvas-wrap chart-canvas-wrap--wide"><canvas id="chart-cdu-infantil"></canvas></div>
         <table class="ledger-table" id="tabla-cdu-infantil">
           <thead><tr><th>Categoría / Tejuelo</th><th>Volúmenes</th><th>% Uso</th><th>Año medio</th></tr></thead>
           <tbody></tbody>
@@ -180,9 +180,10 @@
           <button id="btn-cargar-gen" class="btn-secondary small">Cargar</button>
           <button id="btn-csv-gen" class="btn-secondary small">Descargar CSV</button>
         </div>
+        <p class="error-msg" id="rec-gen-error"></p>
         <div class="table-wrap">
           <table class="ledger-table" id="tabla-rec-gen">
-            <thead><tr><th>ID sistema</th><th>Título</th><th>Autor</th><th>Año</th><th>Nº bibliotecas en red</th></tr></thead>
+            <thead><tr><th>Título</th><th>Autor</th><th>Año</th><th>Nº bibliotecas en red</th></tr></thead>
             <tbody></tbody>
           </table>
         </div>
@@ -221,6 +222,10 @@
   <div class="ficha-card" role="dialog" aria-modal="true" aria-labelledby="ficha-titulo">
     <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">×</button>
     <div class="ficha-tab">Ficha catalográfica</div>
+    <nav class="ficha-nav-tabs" id="ficha-nav-tabs">
+      <button class="ficha-nav-tab active" data-ficha-tab="isbd">Ficha</button>
+      <button class="ficha-nav-tab" data-ficha-tab="sucursales">Sucursales</button>
+    </nav>
     <div id="ficha-contenido">
       <p class="hint">Cargando…</p>
     </div>
