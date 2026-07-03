@@ -41,10 +41,7 @@ from sklearn.metrics.pairwise import cosine_similarity
 DB_PATH = os.environ.get("DB_PATH", "gestion_coleccion.db")
 DB_URL = os.environ.get(
     "DB_URL",
-    '''
-    https://www.dropbox.com/scl/fi/xpmxz61of4ohqjuzju7e3/bibliotecas_navarra2_filtrado.db?rlkey=dyiscet4s4wts02ffmffj9n6g&st=jlto2dmf&dl=1
-    
-    ''',
+    "https://www.dropbox.com/scl/fi/xpmxz61of4ohqjuzju7e3/bibliotecas_navarra2_filtrado.db?rlkey=dyiscet4s4wts02ffmffj9n6g&st=jlto2dmf&dl=1",
 )
 SESSION_TTL_SECONDS = 3 * 60 * 60  # 3 horas
 ANIO_ACTUAL = 2026
