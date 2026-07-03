@@ -405,12 +405,6 @@ function actualizarPoblacionHint() {
   if (opt) $("#poblacion-hint").textContent = t("poblacion_hint", { n: Number(opt.dataset.poblacion).toLocaleString(state.lang === "eu" ? "eu-ES" : "es-ES") });
 }
 
-// ---------- respeta "reducir movimiento": detiene la bandera animada ----------
-if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-  const anim = document.getElementById("flag-wave-anim");
-  if (anim) anim.remove();
-}
-
 // ---------- gestión de archivos ----------
 $$("input[type=file]").forEach(input => {
   input.addEventListener("change", () => {
@@ -450,6 +444,7 @@ $$("input[type=file]").forEach(input => {
     activo = icon;
     icon.classList.add("active");
     const src = icon.dataset.video;
+    tooltip.classList.remove("video-error");
     if (videoEl.getAttribute("src") !== src) videoEl.setAttribute("src", src);
     captionEl.textContent = icon.getAttribute("aria-label") || "";
     tooltip.classList.add("visible");
@@ -457,6 +452,13 @@ $$("input[type=file]").forEach(input => {
     videoEl.currentTime = 0;
     videoEl.play().catch(() => {});
   }
+
+  // Si el vídeo no existe o está vacío/corrupto, mostramos un aviso en vez
+  // de dejar el recuadro en negro.
+  videoEl.addEventListener("error", () => {
+    tooltip.classList.add("video-error");
+    captionEl.textContent = "Vídeo no disponible";
+  });
 
   function cerrar() {
     if (!activo) return;
