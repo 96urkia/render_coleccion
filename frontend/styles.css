@@ -1,282 +1,639 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gestión de la Colección</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
-</head>
-<body>
+:root {
+  --paper: #EDE6D6;
+  --paper-card: #F7F3E8;
+  --ink: #1F2A24;
+  --ink-soft: #4A5248;
+  --spine-green: #2F5233;
+  --spine-green-dark: #203a24;
+  --stamp-red: #A23B2E;
+  --rule: #C9BFA4;
+  --gold: #B08D3E;
 
-<div class="drawer-rail" aria-hidden="true"></div>
+  --font-display: "Fraunces", serif;
+  --font-body: "Public Sans", sans-serif;
+  --font-mono: "IBM Plex Mono", monospace;
+}
 
-<header class="masthead">
-  <div class="masthead-inner">
-    <div class="stamp-mark">📖</div>
-    <div>
-      <h1 data-i18n="app_title">Gestión de la Colección</h1>
-      <p class="subtitle" data-i18n="app_subtitle">Fichero analítico del fondo bibliotecario &mdash; Red de Lectura Pública de Navarra</p>
-    </div>
-    <div class="lang-switch" id="lang-switch" role="group" aria-label="Idioma / Hizkuntza">
-      <button class="lang-btn" data-lang="es" type="button">ES</button>
-      <button class="lang-btn" data-lang="eu" type="button">EU</button>
-    </div>
-  </div>
-</header>
+* { box-sizing: border-box; }
 
-<main class="layout">
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  line-height: 1.5;
+}
 
-  <!-- ============ PANEL IZQUIERDO: FICHA DE CONFIGURACIÓN ============ -->
-  <aside class="ledger-card" id="panel-config">
-    <div class="ledger-tab" data-i18n="ficha01">Ficha 01</div>
-    <h2 data-i18n="seleccion_biblioteca">Selección de biblioteca</h2>
-    <label for="select-biblioteca" data-i18n="centro">Centro</label>
-    <select id="select-biblioteca"></select>
-    <p class="hint" id="poblacion-hint"></p>
+/* Signature element: vertical "drawer rail" strip evoking a catalog cabinet */
+.drawer-rail {
+  position: fixed;
+  top: 0; left: 0; bottom: 0;
+  width: 10px;
+  background: repeating-linear-gradient(
+    to bottom, var(--spine-green) 0 46px, var(--gold) 46px 48px
+  );
+  z-index: 5;
+}
 
-    <hr class="rule">
+@media (prefers-reduced-motion: no-preference) {
+  .kpi-card, .diag-box, .ledger-card { animation: settle 0.4s ease-out both; }
+  @keyframes settle { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+}
 
-    <div id="bloque-carga">
-      <h2 data-i18n="carga_listados">Carga de listados</h2>
-      <p class="hint" data-i18n="carga_hint">Sube los ficheros exportados del catálogo (.txt)</p>
+/* ===== Masthead ===== */
+.masthead {
+  padding: 2.2rem 2rem 1.6rem 3.5rem;
+  border-bottom: 3px double var(--ink);
+}
+.masthead-inner { display: flex; align-items: center; gap: 1rem; max-width: 1200px; margin: 0 auto; }
+.masthead-inner > div:nth-child(2) { flex: 1; }
 
-      <label class="file-label"><span data-i18n="listado_topo">Listado topográfico</span> <span class="req" data-i18n="requerido">requerido</span>
-        <button type="button" class="help-icon" data-video="videos/topografico.mp4" data-i18n-aria-label="ayuda_topo" aria-label="Cómo obtener este archivo">?</button>
-        <input type="file" id="file-topo" accept=".txt">
-        <span class="file-name" data-for="file-topo" data-i18n="sin_archivo">Sin archivo</span>
-      </label>
+/* ===== Language switcher ===== */
+.lang-switch { display: inline-flex; border: 1px solid var(--spine-green); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+.lang-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.35rem 0.7rem;
+  border: none;
+  background: #fff;
+  color: var(--spine-green-dark);
+  cursor: pointer;
+  border-right: 1px solid var(--spine-green);
+}
+.lang-btn:last-child { border-right: none; }
+.lang-btn.active { background: var(--spine-green); color: #fff; }
+.lang-btn:hover:not(.active) { background: rgba(47,82,51,0.1); }
+@media (max-width: 700px) { .masthead-inner { flex-wrap: wrap; } }
+.stamp-mark {
+  font-size: 2.4rem;
+  transform: rotate(-6deg);
+  filter: drop-shadow(1px 2px 0 rgba(0,0,0,0.15));
+}
+h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 2rem;
+  margin: 0;
+  color: var(--spine-green-dark);
+  letter-spacing: 0.01em;
+}
+.subtitle {
+  margin: 0.2rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-soft);
+  font-style: italic;
+}
 
-      <label class="file-label"><span data-i18n="catalogo_label">Catálogo (Formato 1 / Cuerpo 1 / Orden 8)</span> <span class="req" data-i18n="requerido">requerido</span>
-        <button type="button" class="help-icon" data-video="videos/catalogo.mp4" data-i18n-aria-label="ayuda_catalogo" aria-label="Cómo obtener este archivo">?</button>
-        <input type="file" id="file-catalogo" accept=".txt">
-        <span class="file-name" data-for="file-catalogo" data-i18n="sin_archivo">Sin archivo</span>
-      </label>
+/* ===== Layout ===== */
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem 2rem 4rem 3.5rem;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 2rem;
+  align-items: start;
+}
+@media (max-width: 860px) {
+  .layout { grid-template-columns: 1fr; padding-left: 1.5rem; }
+  .drawer-rail { width: 6px; }
+}
 
-      <label class="file-label"><span data-i18n="nunca_prestados">Ejemplares nunca prestados</span> <span class="opt" data-i18n="opcional">opcional</span>
-        <button type="button" class="help-icon" data-video="videos/no_prestados.mp4" data-i18n-aria-label="ayuda_nunca" aria-label="Cómo obtener este archivo">?</button>
-        <input type="file" id="file-nunca" accept=".txt">
-        <span class="file-name" data-for="file-nunca" data-i18n="sin_archivo">Sin archivo</span>
-      </label>
+/* ===== Ledger card (config panel) — index-card look with die-cut guide tab ===== */
+.ledger-card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  padding: 1.6rem 1.4rem 1.4rem;
+  position: relative;
+  box-shadow: 3px 3px 0 rgba(31,42,36,0.06);
+}
+.ledger-tab {
+  position: absolute;
+  top: -14px;
+  left: 1.2rem;
+  background: var(--spine-green);
+  color: var(--paper-card);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+}
+.ledger-card h2 {
+  font-family: var(--font-display);
+  font-size: 1.15rem;
+  margin: 0.4rem 0 0.7rem;
+  color: var(--spine-green-dark);
+}
+.ledger-card label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 0.3rem; }
+.hint { font-size: 0.8rem; color: var(--ink-soft); margin: 0.2rem 0 0.8rem; }
+.rule { border: none; border-top: 1px dashed var(--rule); margin: 1.2rem 0; }
 
-      <label class="file-label"><span data-i18n="mas_prestados">Ejemplares más prestados</span> <span class="opt" data-i18n="opcional">opcional</span>
-        <button type="button" class="help-icon" data-video="videos/mas_prestados.mp4" data-i18n-aria-label="ayuda_mas" aria-label="Cómo obtener este archivo">?</button>
-        <input type="file" id="file-mas2" accept=".txt">
-        <span class="file-name" data-for="file-mas2" data-i18n="sin_archivo">Sin archivo</span>
-      </label>
+select, input[type="text"], input[type="number"] {
+  width: 100%;
+  font-family: var(--font-body);
+  font-size: 0.9rem;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  background: #fff;
+  color: var(--ink);
+}
 
-      <button id="btn-analizar" class="btn-stamp" data-i18n="analizar_fondos">Analizar fondos</button>
-      <p class="error-msg" id="analizar-error"></p>
-    </div>
+.req { color: var(--stamp-red); font-size: 0.7rem; font-weight: 400; text-transform: uppercase; }
+.opt { color: var(--ink-soft); font-size: 0.7rem; font-weight: 400; text-transform: uppercase; }
 
-    <!-- Miniatura de vídeo de ayuda, compartida por todos los iconos "?" -->
-    <div class="video-tooltip" id="video-tooltip">
-      <video id="video-tooltip-el" muted loop playsinline preload="none"></video>
-      <div class="video-tooltip-caption" id="video-tooltip-caption"></div>
-    </div>
+.file-label {
+  display: block;
+  margin-bottom: 1rem;
+  border: 1px dashed var(--rule);
+  padding: 0.6rem;
+  border-radius: 3px;
+  cursor: pointer;
+  background: #fff;
+}
+.file-label input[type="file"] { display: block; margin-top: 0.4rem; font-size: 0.8rem; width: 100%; }
+.file-name { display: block; font-family: var(--font-mono); font-size: 0.72rem; color: var(--ink-soft); margin-top: 0.3rem; }
 
+/* ---------- icono de ayuda + miniatura de vídeo ---------- */
+.help-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  margin-left: 0.35rem;
+  padding: 0;
+  border: 1px solid var(--ink-soft);
+  border-radius: 50%;
+  background: var(--paper-card);
+  color: var(--ink-soft);
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1;
+  cursor: help;
+  vertical-align: middle;
+}
+.help-icon:hover,
+.help-icon:focus-visible,
+.help-icon.active {
+  background: var(--spine-green);
+  border-color: var(--spine-green);
+  color: #fff;
+  outline: none;
+}
 
-    <div id="bloque-listo" hidden>
-      <div class="ready-stamp" data-i18n="datos_cargados">✓ Datos cargados</div>
-      <button id="btn-reset" class="btn-secondary" data-i18n="cambiar_archivos">Cambiar / volver a subir archivos</button>
-    </div>
-  </aside>
+.video-tooltip {
+  position: fixed;
+  z-index: 60;
+  display: none;
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  padding: 0.4rem;
+  box-shadow: 0 8px 20px rgba(31, 42, 36, 0.28);
+}
+.video-tooltip.visible { display: block; }
+.video-tooltip video {
+  display: block;
+  width: 260px;
+  max-width: 60vw;
+  border-radius: 2px;
+  background: #000;
+}
+.video-tooltip-caption {
+  margin-top: 0.35rem;
+  font-family: var(--font-mono);
+  font-size: 0.68rem;
+  color: var(--ink-soft);
+  text-align: center;
+  max-width: 260px;
+}
 
-  <!-- ============ PANEL DERECHO: RESULTADOS ============ -->
-  <section class="results" id="panel-results" hidden>
+.btn-stamp {
+  width: 100%;
+  margin-top: 0.6rem;
+  padding: 0.7rem;
+  background: var(--stamp-red);
+  color: #fff;
+  border: none;
+  border-radius: 3px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 1rem;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  transition: transform 0.12s ease, background 0.12s ease;
+}
+.btn-stamp:hover { background: #8a2f24; transform: translateY(-1px); }
+.btn-stamp:active { transform: translateY(0); }
+.btn-stamp:disabled { background: #b98d86; cursor: wait; }
 
-    <div class="kpi-row" id="kpi-row"></div>
-    <p class="huerfanos-note" id="huerfanos-note"></p>
+.btn-secondary {
+  width: 100%;
+  padding: 0.55rem;
+  background: transparent;
+  border: 1px solid var(--spine-green);
+  color: var(--spine-green-dark);
+  border-radius: 3px;
+  font-family: var(--font-body);
+  font-weight: 600;
+  cursor: pointer;
+}
+.btn-secondary.small { width: auto; padding: 0.45rem 0.9rem; font-size: 0.85rem; }
+.btn-secondary:hover { background: rgba(47,82,51,0.08); }
 
-    <nav class="guide-tabs" id="tabs-principal">
-      <button class="guide-tab active" data-tab="analisis" data-i18n="tab_analisis">Análisis de la colección</button>
-      <button class="guide-tab" data-tab="compras" data-i18n="tab_compras">Recomendaciones de compra</button>
-    </nav>
+.error-msg { color: var(--stamp-red); font-size: 0.82rem; margin-top: 0.6rem; min-height: 1.2em; }
 
-    <!-- ===== BLOQUE 1: ANÁLISIS ===== -->
-    <div class="tab-panel" data-panel="analisis">
-      <nav class="guide-subtabs" id="subtabs-analisis">
-        <button class="guide-subtab active" data-subtab="general" data-i18n="subtab_general">Análisis general</button>
-        <button class="guide-subtab" data-subtab="cdu" data-i18n="subtab_cdu">Análisis por CDU</button>
-        <button class="guide-subtab" data-subtab="signatura" data-i18n="subtab_signatura">Análisis por signatura</button>
-      </nav>
+.ready-stamp {
+  display: inline-block;
+  border: 2px solid var(--spine-green);
+  color: var(--spine-green-dark);
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  transform: rotate(-2deg);
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
 
-      <div class="sub-panel" data-subpanel="general">
-        <h3 data-i18n="diagnostico_ifla">Diagnóstico según pautas IFLA</h3>
-        <div class="diag-grid">
-          <div class="diag-box" id="diag-volumen"></div>
-          <div class="diag-box" id="diag-ratio"></div>
-        </div>
+/* ===== Results ===== */
+.empty-state {
+  grid-column: 2;
+  font-style: italic;
+  color: var(--ink-soft);
+  padding: 3rem 1rem;
+  text-align: center;
+  border: 1px dashed var(--rule);
+  border-radius: 4px;
+}
 
-        <h3 data-i18n="distribucion_macro">Distribución macroscópica</h3>
-        <table class="ledger-table" id="tabla-macro">
-          <thead><tr><th data-i18n="col_seccion">Sección</th><th data-i18n="col_distribucion">Distribución</th></tr></thead>
-          <tbody></tbody>
-        </table>
+.kpi-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 0.4rem; }
+@media (max-width: 700px) { .kpi-row { grid-template-columns: repeat(2, 1fr); } }
 
-        <div class="chart-grid">
-          <div class="chart-card">
-            <h3 data-i18n="nivel_rotacion">Nivel de rotación física</h3>
-            <div class="chart-canvas-wrap"><canvas id="chart-rotacion"></canvas></div>
-          </div>
-          <div class="chart-card">
-            <h3 data-i18n="cronologia_ediciones">Cronología de ediciones</h3>
-            <div class="chart-canvas-wrap"><canvas id="chart-cronologia"></canvas></div>
-          </div>
-        </div>
-      </div>
+.kpi-card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 3px;
+  padding: 0.9rem 1rem;
+  position: relative;
+  overflow: hidden;
+}
+.kpi-card .kpi-label { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-soft); }
+.kpi-card .kpi-value { font-family: var(--font-display); font-size: 1.7rem; color: var(--spine-green-dark); font-weight: 600; }
+.kpi-card::after {
+  content: "";
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 4px;
+  background: var(--gold);
+}
 
-      <div class="sub-panel" data-subpanel="cdu" hidden>
-        <h3 data-i18n="seccion_adultos">Sección adultos</h3>
-        <div class="chart-canvas-wrap chart-canvas-wrap--wide"><canvas id="chart-cdu-adultos"></canvas></div>
-        <table class="ledger-table sortable-table" id="tabla-cdu-adultos">
-          <thead><tr>
-            <th data-key="categoria" data-i18n="col_categoria_cdu">Categoría / CDU</th>
-            <th data-key="volumenes" data-i18n="col_volumenes">Volúmenes</th>
-            <th data-key="pct_uso" data-i18n="col_pct_uso">% Uso</th>
-            <th data-key="anio_medio" data-i18n="col_anio_medio">Año medio</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
+.huerfanos-note { font-size: 0.8rem; color: var(--ink-soft); margin: 0.4rem 0 1.2rem; }
 
-        <h3 data-i18n="seccion_infantil">Sección infantil / juvenil</h3>
-        <div class="chart-canvas-wrap chart-canvas-wrap--wide"><canvas id="chart-cdu-infantil"></canvas></div>
-        <table class="ledger-table sortable-table" id="tabla-cdu-infantil">
-          <thead><tr>
-            <th data-key="categoria" data-i18n="col_categoria_tejuelo">Categoría / Tejuelo</th>
-            <th data-key="volumenes" data-i18n="col_volumenes">Volúmenes</th>
-            <th data-key="pct_uso" data-i18n="col_pct_uso">% Uso</th>
-            <th data-key="anio_medio" data-i18n="col_anio_medio">Año medio</th>
-          </tr></thead>
-          <tbody></tbody>
-        </table>
-      </div>
+/* ===== Guide tabs: die-cut catalog guide-card look ===== */
+.guide-tabs, .guide-subtabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 0;
+  border-bottom: 2px solid var(--ink);
+}
+.guide-tab, .guide-subtab {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.95rem;
+  background: var(--rule);
+  color: var(--ink-soft);
+  border: none;
+  padding: 0.6rem 1.2rem;
+  cursor: pointer;
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 0% 100%);
+  margin-right: -14px;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+.guide-subtab { font-size: 0.85rem; padding: 0.5rem 1rem; }
+.guide-tab.active, .guide-subtab.active {
+  background: var(--paper-card);
+  color: var(--spine-green-dark);
+  border-top: 2px solid var(--spine-green);
+}
+.guide-tab:hover:not(.active), .guide-subtab:hover:not(.active) { background: #d9d0b5; }
 
-      <div class="sub-panel" data-subpanel="signatura" hidden>
-        <div class="filter-bar">
-          <div class="segmented" id="filtro-seccion">
-            <button class="seg-btn active" data-val="todo" data-i18n="todo_fondo">Todo el fondo</button>
-            <button class="seg-btn" data-val="adultos" data-i18n="solo_adultos">Solo adultos</button>
-            <button class="seg-btn" data-val="infantil" data-i18n="solo_infantil">Solo infantil / juvenil</button>
-          </div>
+.tab-panel, .sub-panel {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-top: none;
+  padding: 1.4rem;
+}
+.guide-subtabs { border-bottom: 1px solid var(--rule); margin-top: 0.2rem; }
 
-          <div class="filter-row">
-            <input type="text" id="input-busqueda-sig" data-i18n-placeholder="buscar_signatura_placeholder" placeholder="Buscar por signatura / CDU · admite comodines (*)">
-            <select id="select-prestamo-sig">
-              <option value="todos" data-i18n="todos_prestamos">Todos los préstamos</option>
-              <option value="nunca" data-i18n="nunca_prestado_0">Nunca prestado (0)</option>
-              <option value="estandar" data-i18n="prestamo_estandar_1">Préstamo estándar (1)</option>
-              <option value="alta" data-i18n="alta_demanda_2">Alta demanda (2)</option>
-            </select>
-          </div>
-          <div class="filter-row">
-            <select id="select-categoria-sig"><option value="Todas" data-i18n="todas_categorias">Todas las categorías</option></select>
-            <select id="select-sub-sig"><option value="Todas" data-i18n="todas_subsignaturas">Todas las sub-signaturas</option></select>
-          </div>
-        </div>
+h3 {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  color: var(--spine-green-dark);
+  margin: 1.4rem 0 0.6rem;
+}
+h3:first-child { margin-top: 0.2rem; }
 
-        <div class="resumen-block" id="resumen-sig-block">
-          <p class="resumen-block-label" data-i18n="resumen_label">
-            <span class="resumen-block-icon" aria-hidden="true">Σ</span>
-            Resumen de la selección <em data-i18n="resumen_no_filtro">(no es un filtro, solo informa)</em>
-          </p>
-          <div class="resumen-kpi" id="resumen-sig"></div>
-        </div>
+.diag-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 0.5rem; }
+@media (max-width: 700px) { .diag-grid { grid-template-columns: 1fr; } }
+.diag-box { padding: 0.8rem 1rem; border-radius: 3px; font-size: 0.88rem; border-left: 4px solid; }
+.diag-box.success { background: #E8F0E6; border-color: var(--spine-green); color: #234226; }
+.diag-box.warning { background: #FBF0DC; border-color: var(--gold); color: #6b5314; }
+.diag-box.error   { background: #F7E4E1; border-color: var(--stamp-red); color: #7a271c; }
+.diag-box.info    { background: #E7EEF3; border-color: #3E6B8A; color: #234158; }
 
-        <p class="hint" id="sig-count"></p>
-        <p class="hint" data-i18n="clic_fila_hint">Haz clic en una fila para ver la ficha catalográfica del registro (disponible desde el año de corte de la base de datos de red).</p>
-        <div class="table-wrap">
-          <table class="ledger-table" id="tabla-signatura">
-            <thead><tr>
-              <th data-i18n="col_id">ID</th>
-              <th data-i18n="col_signatura">Signatura</th>
-              <th data-i18n="col_titulo">Título</th>
-              <th data-i18n="col_anio">Año</th>
-              <th data-i18n="col_categoria">Categoría</th>
-              <th data-i18n="col_prestamos">Préstamos</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-        <div class="pager" id="pager-sig"></div>
-      </div>
-    </div>
+/* ===== Tables — ledger / index look ===== */
+.ledger-table { width: 100%; border-collapse: collapse; font-size: 0.86rem; margin-bottom: 1rem; }
+.ledger-table th {
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--ink-soft);
+  border-bottom: 2px solid var(--ink);
+  padding: 0.4rem 0.6rem;
+}
+.ledger-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--rule); }
+.uso-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(31,42,36,0.25);
+  margin-right: 0.45rem;
+  vertical-align: middle;
+}
+.ledger-table tbody tr:hover { background: rgba(47,82,51,0.05); }
+.table-wrap { max-height: 480px; overflow-y: auto; border: 1px solid var(--rule); border-radius: 3px; }
+.table-wrap .ledger-table { margin-bottom: 0; }
+.table-wrap thead th { position: sticky; top: 0; background: var(--paper-card); }
 
-    <!-- ===== BLOQUE 2: RECOMENDACIONES ===== -->
-    <div class="tab-panel" data-panel="compras" hidden>
-      <nav class="guide-subtabs" id="subtabs-compras">
-        <button class="guide-subtab active" data-subtab="generales" data-i18n="rec_generales">Recomendaciones generales</button>
-        <button class="guide-subtab" data-subtab="cdu-compra" data-i18n="rec_cdu">Recomendaciones por CDU</button>
-      </nav>
+/* ===== Sortable tables (Análisis por CDU) ===== */
+.sortable-table th[data-key] {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.2rem;
+  transition: color 0.12s ease;
+}
+.sortable-table th[data-key]:hover { color: var(--spine-green-dark); }
+.sortable-table th[data-key]::after {
+  content: "↕";
+  position: absolute;
+  right: 0.3rem;
+  opacity: 0.35;
+  font-size: 0.75em;
+}
+.sortable-table th[data-key].sort-asc::after { content: "↑"; opacity: 1; color: var(--spine-green-dark); }
+.sortable-table th[data-key].sort-desc::after { content: "↓"; opacity: 1; color: var(--spine-green-dark); }
 
-      <div class="sub-panel" data-subpanel="generales">
-        <h3 data-i18n="titulos_populares">Títulos populares en la red ausentes en tu centro</h3>
-        <div class="filter-row">
-          <label><span data-i18n="numero_titulos">Número de títulos:</span> <input type="number" id="input-limite-gen" value="50" min="5" max="200" step="5"></label>
-          <button id="btn-cargar-gen" class="btn-secondary small" data-i18n="cargar">Cargar</button>
-          <button id="btn-csv-gen" class="btn-secondary small" data-i18n="descargar_csv">Descargar CSV</button>
-        </div>
-        <p class="error-msg" id="rec-gen-error"></p>
-        <div class="table-wrap">
-          <table class="ledger-table" id="tabla-rec-gen">
-            <thead><tr>
-              <th data-i18n="col_titulo">Título</th>
-              <th data-i18n="col_autor">Autor</th>
-              <th data-i18n="col_anio">Año</th>
-              <th data-i18n="col_num_bibliotecas">Nº bibliotecas en red</th>
-            </tr></thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
+.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem; }
+@media (max-width: 700px) { .chart-grid { grid-template-columns: 1fr; } }
+.chart-card { background: #fff; border: 1px solid var(--rule); border-radius: 3px; padding: 0.8rem; }
 
-      <div class="sub-panel" data-subpanel="cdu-compra" hidden>
-        <h3 data-i18n="sugerencias_cdu">Sugerencias de adquisición por CDU</h3>
-        <div class="filter-row">
-          <label><span data-i18n="max_subcategoria">Máx. por subcategoría:</span> <input type="number" id="input-limite-cdu" value="10" min="1" max="100"></label>
-          <label><span data-i18n="anio_minimo">Año mínimo:</span> <input type="number" id="input-anio-cdu" value="2015" min="1800" max="2026"></label>
-        </div>
-        <div class="filter-row">
-          <input type="text" id="input-busqueda-cdu" data-i18n-placeholder="filtrar_cdu_placeholder" placeholder="Filtrar por CDU · admite comodines (*), ej. 004*">
-          <button id="btn-cargar-cdu" class="btn-secondary small" data-i18n="cargar_sugerencias">Cargar sugerencias</button>
-        </div>
+/* Contenedor de altura fija: Chart.js con maintainAspectRatio:false necesita un
+   padre con tamaño explícito para que todos los gráficos (donut, barras, con
+   pocas o muchas categorías) se vean del mismo tamaño entre sí. */
+.chart-canvas-wrap { position: relative; height: 260px; margin-bottom: 0.4rem; }
+.chart-canvas-wrap--wide { height: 300px; margin-bottom: 1rem; }
+.chart-canvas-wrap canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; }
 
-        <div class="segmented" id="filtro-seccion-cdu">
-          <button class="seg-btn active" data-val="adultos" data-i18n="seccion_adultos_seg">Sección adultos</button>
-          <button class="seg-btn" data-val="infantil" data-i18n="seccion_infantil_seg">Sección infantil</button>
-        </div>
+/* ===== Filters ===== */
+.filter-bar { margin-bottom: 1rem; }
+.filter-row { display: flex; gap: 0.7rem; margin-bottom: 0.7rem; flex-wrap: wrap; }
+.filter-row input[type="text"] { flex: 1; min-width: 220px; }
+.filter-row select { max-width: 280px; }
+.filter-row label { font-size: 0.85rem; display: flex; align-items: center; gap: 0.4rem; }
+.filter-row input[type="number"] { width: 80px; display: inline-block; }
 
-        <div id="acordeon-cdu"></div>
-      </div>
-    </div>
+.segmented { display: inline-flex; border: 1px solid var(--spine-green); border-radius: 4px; overflow: hidden; margin-bottom: 0.9rem; }
+.seg-btn {
+  font-family: var(--font-body);
+  font-size: 0.82rem;
+  font-weight: 600;
+  padding: 0.4rem 0.9rem;
+  border: none;
+  background: #fff;
+  color: var(--spine-green-dark);
+  cursor: pointer;
+  border-right: 1px solid var(--spine-green);
+}
+.seg-btn:last-child { border-right: none; }
+.seg-btn.active { background: var(--spine-green); color: #fff; }
 
-  </section>
+/* Bloque de resumen: se distingue visualmente de los filtros de arriba porque
+   NO es interactivo (no son botones/segmentos), sino una nota informativa,
+   con el mismo lenguaje visual que los diag-box "info" del análisis general. */
+.resumen-block {
+  background: #E7EEF3;
+  border: 1px solid #3E6B8A;
+  border-left: 4px solid #3E6B8A;
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem 0.8rem;
+  margin: 0.8rem 0 1rem;
+}
+.resumen-block-label {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #234158;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.resumen-block-icon { font-family: var(--font-mono); font-size: 0.9rem; }
+.resumen-block-label em { font-style: italic; font-weight: 400; text-transform: none; letter-spacing: normal; }
+.resumen-kpi { display: flex; gap: 1.2rem; font-family: var(--font-mono); font-size: 0.85rem; flex-wrap: wrap; margin: 0; }
+.resumen-kpi span {
+  background: #fff;
+  border: 1px solid #3E6B8A;
+  border-radius: 3px;
+  padding: 0.3rem 0.7rem;
+  cursor: default;
+}
 
-  <p class="empty-state" id="empty-state" data-i18n="empty_state">
-    Selecciona tu biblioteca y sube el listado topográfico y el catálogo para empezar el análisis.
-  </p>
+.pager { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem; font-size: 0.85rem; }
+.pager button { font-family: var(--font-body); font-size: 0.82rem; padding: 0.3rem 0.7rem; border: 1px solid var(--rule); background: #fff; border-radius: 3px; cursor: pointer; }
+.pager button:disabled { opacity: 0.4; cursor: default; }
 
-</main>
+/* ===== Accordion for CDU purchase recommendations ===== */
+.accordion-item { border: 1px solid var(--rule); border-radius: 3px; margin-bottom: 0.5rem; background: #fff; }
+.accordion-head {
+  width: 100%;
+  text-align: left;
+  padding: 0.6rem 0.9rem;
+  background: none;
+  border: none;
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 0.92rem;
+  color: var(--spine-green-dark);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+}
+.accordion-body { padding: 0 0.9rem 0.8rem; }
+.accordion-body[hidden] { display: none; }
 
-<!-- ============ MODAL: FICHA CATALOGRÁFICA CLÁSICA ============ -->
-<div class="ficha-overlay" id="ficha-overlay" hidden>
-  <div class="ficha-card" role="dialog" aria-modal="true" aria-labelledby="ficha-titulo">
-    <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha" data-i18n-aria-label="cerrar_ficha">×</button>
-    <div class="ficha-tab" data-i18n="ficha_catalografica">Ficha catalográfica</div>
-    <nav class="ficha-nav-tabs" id="ficha-nav-tabs">
-      <button class="ficha-nav-tab active" data-ficha-tab="isbd" data-i18n="ficha_tab_ficha">Ficha</button>
-      <button class="ficha-nav-tab" data-ficha-tab="sucursales" data-i18n="ficha_tab_sucursales">Sucursales</button>
-    </nav>
-    <div id="ficha-contenido">
-      <p class="hint" data-i18n="cargando">Cargando…</p>
-    </div>
-  </div>
-</div>
+/* ===== Ficha catalográfica (modal estilo tarjeta de catálogo) ===== */
+:root {
+  --sepia-card: #EFE2C3;
+  --sepia-card-dark: #E4D3AC;
+  --sepia-ink: #4A3B24;
+  --sepia-rule: #C9A96B;
+}
+.ficha-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(31, 42, 36, 0.55);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1rem;
+  z-index: 50;
+  overflow-y: auto;
+}
+.ficha-overlay[hidden] { display: none; }
+.ficha-card {
+  background: var(--paper-card);
+  border: 1px solid var(--rule);
+  border-radius: 2px;
+  max-width: 620px;
+  width: 100%;
+  padding: 2rem 1.8rem 1.6rem;
+  position: relative;
+  box-shadow: 5px 6px 0 rgba(31,42,36,0.18);
+  font-family: var(--font-mono);
+}
+.ficha-tab {
+  position: absolute;
+  top: -14px;
+  left: 1.4rem;
+  background: var(--gold);
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+  clip-path: polygon(0 0, 100% 0, 92% 100%, 8% 100%);
+}
+.ficha-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.8rem;
+  background: none;
+  border: none;
+  font-size: 1.6rem;
+  line-height: 1;
+  color: var(--ink-soft);
+  cursor: pointer;
+}
+.ficha-close:hover { color: var(--stamp-red); }
 
-<footer class="colophon" data-i18n="colophon">Herramienta de gestión de colección · Diseñada para bibliotecas de la Red de Lectura Pública de Navarra</footer>
+/* Pestañas de navegación dentro de la ficha: Ficha ISBD / Sucursales */
+.ficha-nav-tabs {
+  display: flex;
+  gap: 0.3rem;
+  margin: 0.4rem 0 1.1rem;
+  border-bottom: 1.5px solid var(--ink);
+}
+.ficha-nav-tab {
+  font-family: var(--font-mono);
+  font-size: 0.76rem;
+  letter-spacing: 0.03em;
+  background: none;
+  border: none;
+  padding: 0.4rem 0.8rem;
+  color: var(--ink-soft);
+  cursor: pointer;
+  position: relative;
+  top: 1.5px;
+}
+.ficha-nav-tab.active {
+  color: var(--spine-green-dark);
+  font-weight: 600;
+  border-bottom: 2px solid var(--stamp-red);
+}
+.ficha-nav-tab:hover:not(.active) { color: var(--ink); }
+.ficha-panel[hidden] { display: none; }
 
-<script src="app.js"></script>
-</body>
-</html>
+.ficha-error { color: var(--stamp-red); font-size: 0.88rem; }
+
+/* Tarjeta ISBD: papel envejecido, tono sepia, como una ficha de catálogo real */
+.isbd-card {
+  background: var(--sepia-card);
+  background-image: linear-gradient(var(--sepia-card-dark) 1px, transparent 1px);
+  background-size: 100% 1.55em;
+  background-position: 0 4.4em;
+  border: 1px solid var(--sepia-rule);
+  border-radius: 2px;
+  padding: 1.2rem 1.3rem 1.4rem;
+  color: var(--sepia-ink);
+  box-shadow: inset 0 0 0 1px rgba(74,59,36,0.08);
+}
+.isbd-signatura {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.02em;
+  margin-bottom: 0.2rem;
+}
+.isbd-autor {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  margin-bottom: 0.9rem;
+}
+.isbd-parrafo {
+  font-family: var(--font-mono);
+  font-size: 0.86rem;
+  line-height: 1.55em;
+  padding-left: 1.6rem;
+  margin: 0 0 0.9rem;
+}
+.isbd-parrafo .isbd-titulo { font-style: italic; }
+.isbd-materias {
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  line-height: 1.55em;
+  padding-left: 1.6rem;
+  border-top: 1px solid var(--sepia-rule);
+  padding-top: 0.7rem;
+}
+.isbd-isbn {
+  font-family: var(--font-mono);
+  font-size: 0.74rem;
+  color: #6b5636;
+  margin-top: 0.7rem;
+  padding-left: 1.6rem;
+}
+.isbd-nota-sistema {
+  font-family: var(--font-body);
+  font-style: italic;
+  font-size: 0.7rem;
+  color: #6b5636;
+  text-align: center;
+  margin-top: 1.1rem;
+  padding-top: 0.6rem;
+  border-top: 1px dashed var(--sepia-rule);
+}
+
+.sucursales-table td, .sucursales-table th { font-size: 0.82rem; }
+
+tr.fila-clicable { cursor: pointer; }
+
+.colophon {
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--ink-soft);
+  padding: 2rem 1rem 3rem;
+  font-style: italic;
+}
