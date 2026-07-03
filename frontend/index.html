@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestión de la Colección</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.5.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<div class="drawer-rail" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead-inner">
+    <div class="stamp-mark">📖</div>
+    <div>
+      <h1>Gestión de la Colección</h1>
+      <p class="subtitle">Fichero analítico del fondo bibliotecario &mdash; Red de Lectura Pública de Navarra</p>
+    </div>
+  </div>
+</header>
+
+<main class="layout">
+
+  <!-- ============ PANEL IZQUIERDO: FICHA DE CONFIGURACIÓN ============ -->
+  <aside class="ledger-card" id="panel-config">
+    <div class="ledger-tab">Ficha 01</div>
+    <h2>Selección de biblioteca</h2>
+    <label for="select-biblioteca">Centro</label>
+    <select id="select-biblioteca"></select>
+    <p class="hint" id="poblacion-hint"></p>
+
+    <hr class="rule">
+
+    <div id="bloque-carga">
+      <h2>Carga de listados</h2>
+      <p class="hint">Sube los ficheros exportados del catálogo (.txt)</p>
+
+      <label class="file-label">Listado topográfico <span class="req">requerido</span>
+        <input type="file" id="file-topo" accept=".txt">
+        <span class="file-name" data-for="file-topo">Sin archivo</span>
+      </label>
+
+      <label class="file-label">Catálogo (Formato 1 / Cuerpo 1 / Orden 8) <span class="req">requerido</span>
+        <input type="file" id="file-catalogo" accept=".txt">
+        <span class="file-name" data-for="file-catalogo">Sin archivo</span>
+      </label>
+
+      <label class="file-label">Ejemplares nunca prestados <span class="opt">opcional</span>
+        <input type="file" id="file-nunca" accept=".txt">
+        <span class="file-name" data-for="file-nunca">Sin archivo</span>
+      </label>
+
+      <label class="file-label">Ejemplares más prestados <span class="opt">opcional</span>
+        <input type="file" id="file-mas2" accept=".txt">
+        <span class="file-name" data-for="file-mas2">Sin archivo</span>
+      </label>
+
+      <button id="btn-analizar" class="btn-stamp">Analizar fondos</button>
+      <p class="error-msg" id="analizar-error"></p>
+    </div>
+
+    <div id="bloque-listo" hidden>
+      <div class="ready-stamp">✓ Datos cargados</div>
+      <button id="btn-reset" class="btn-secondary">Cambiar / volver a subir archivos</button>
+    </div>
+  </aside>
+
+  <!-- ============ PANEL DERECHO: RESULTADOS ============ -->
+  <section class="results" id="panel-results" hidden>
+
+    <div class="kpi-row" id="kpi-row"></div>
+    <p class="huerfanos-note" id="huerfanos-note"></p>
+
+    <nav class="guide-tabs" id="tabs-principal">
+      <button class="guide-tab active" data-tab="analisis">Análisis de la colección</button>
+      <button class="guide-tab" data-tab="compras">Recomendaciones de compra</button>
+    </nav>
+
+    <!-- ===== BLOQUE 1: ANÁLISIS ===== -->
+    <div class="tab-panel" data-panel="analisis">
+      <nav class="guide-subtabs" id="subtabs-analisis">
+        <button class="guide-subtab active" data-subtab="general">Análisis general</button>
+        <button class="guide-subtab" data-subtab="cdu">Análisis por CDU</button>
+        <button class="guide-subtab" data-subtab="signatura">Análisis por signatura</button>
+      </nav>
+
+      <div class="sub-panel" data-subpanel="general">
+        <h3>Diagnóstico según pautas IFLA</h3>
+        <div class="diag-grid">
+          <div class="diag-box" id="diag-volumen"></div>
+          <div class="diag-box" id="diag-ratio"></div>
+        </div>
+
+        <h3>Distribución macroscópica</h3>
+        <table class="ledger-table" id="tabla-macro">
+          <thead><tr><th>Sección</th><th>Distribución</th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <div class="chart-grid">
+          <div class="chart-card">
+            <h3>Nivel de rotación física</h3>
+            <canvas id="chart-rotacion"></canvas>
+          </div>
+          <div class="chart-card">
+            <h3>Cronología de ediciones</h3>
+            <canvas id="chart-cronologia"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <div class="sub-panel" data-subpanel="cdu" hidden>
+        <h3>Sección adultos</h3>
+        <canvas id="chart-cdu-adultos" class="bar-canvas"></canvas>
+        <table class="ledger-table" id="tabla-cdu-adultos">
+          <thead><tr><th>Categoría / CDU</th><th>Volúmenes</th><th>% Uso</th><th>Año medio</th></tr></thead>
+          <tbody></tbody>
+        </table>
+
+        <h3>Sección infantil / juvenil</h3>
+        <canvas id="chart-cdu-infantil" class="bar-canvas"></canvas>
+        <table class="ledger-table" id="tabla-cdu-infantil">
+          <thead><tr><th>Categoría / Tejuelo</th><th>Volúmenes</th><th>% Uso</th><th>Año medio</th></tr></thead>
+          <tbody></tbody>
+        </table>
+      </div>
+
+      <div class="sub-panel" data-subpanel="signatura" hidden>
+        <div class="filter-bar">
+          <div class="segmented" id="filtro-seccion">
+            <button class="seg-btn active" data-val="todo">Todo el fondo</button>
+            <button class="seg-btn" data-val="adultos">Solo adultos</button>
+            <button class="seg-btn" data-val="infantil">Solo infantil / juvenil</button>
+          </div>
+
+          <div class="filter-row">
+            <input type="text" id="input-busqueda-sig" placeholder="Buscar por signatura / CDU · admite comodines (*)">
+            <select id="select-prestamo-sig">
+              <option value="todos">Todos los préstamos</option>
+              <option value="nunca">Nunca prestado (0)</option>
+              <option value="estandar">Préstamo estándar (1)</option>
+              <option value="alta">Alta demanda (2)</option>
+            </select>
+          </div>
+          <div class="filter-row">
+            <select id="select-categoria-sig"><option value="Todas">Todas las categorías</option></select>
+            <select id="select-sub-sig"><option value="Todas">Todas las sub-signaturas</option></select>
+          </div>
+        </div>
+
+        <div class="resumen-kpi" id="resumen-sig"></div>
+
+        <p class="hint" id="sig-count"></p>
+        <p class="hint">Haz clic en una fila para ver la ficha catalográfica del registro (disponible desde el año de corte de la base de datos de red).</p>
+        <div class="table-wrap">
+          <table class="ledger-table" id="tabla-signatura">
+            <thead><tr><th>ID</th><th>Signatura</th><th>Título</th><th>Año</th><th>Categoría</th><th>Préstamos</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+        <div class="pager" id="pager-sig"></div>
+      </div>
+    </div>
+
+    <!-- ===== BLOQUE 2: RECOMENDACIONES ===== -->
+    <div class="tab-panel" data-panel="compras" hidden>
+      <nav class="guide-subtabs" id="subtabs-compras">
+        <button class="guide-subtab active" data-subtab="generales">Recomendaciones generales</button>
+        <button class="guide-subtab" data-subtab="cdu-compra">Recomendaciones por CDU</button>
+      </nav>
+
+      <div class="sub-panel" data-subpanel="generales">
+        <h3>Títulos populares en la red ausentes en tu centro</h3>
+        <div class="filter-row">
+          <label>Número de títulos: <input type="number" id="input-limite-gen" value="50" min="5" max="200" step="5"></label>
+          <button id="btn-cargar-gen" class="btn-secondary small">Cargar</button>
+          <button id="btn-csv-gen" class="btn-secondary small">Descargar CSV</button>
+        </div>
+        <div class="table-wrap">
+          <table class="ledger-table" id="tabla-rec-gen">
+            <thead><tr><th>ID sistema</th><th>Título</th><th>Autor</th><th>Año</th><th>Nº bibliotecas en red</th></tr></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="sub-panel" data-subpanel="cdu-compra" hidden>
+        <h3>Sugerencias de adquisición por CDU</h3>
+        <div class="filter-row">
+          <label>Máx. por subcategoría: <input type="number" id="input-limite-cdu" value="10" min="1" max="100"></label>
+          <label>Año mínimo: <input type="number" id="input-anio-cdu" value="2015" min="1800" max="2026"></label>
+        </div>
+        <div class="filter-row">
+          <input type="text" id="input-busqueda-cdu" placeholder="Filtrar por CDU · admite comodines (*), ej. 004*">
+          <button id="btn-cargar-cdu" class="btn-secondary small">Cargar sugerencias</button>
+        </div>
+
+        <div class="segmented" id="filtro-seccion-cdu">
+          <button class="seg-btn active" data-val="adultos">Sección adultos</button>
+          <button class="seg-btn" data-val="infantil">Sección infantil</button>
+        </div>
+
+        <div id="acordeon-cdu"></div>
+      </div>
+    </div>
+
+  </section>
+
+  <p class="empty-state" id="empty-state">
+    Selecciona tu biblioteca y sube el listado topográfico y el catálogo para empezar el análisis.
+  </p>
+
+</main>
+
+<!-- ============ MODAL: FICHA CATALOGRÁFICA CLÁSICA ============ -->
+<div class="ficha-overlay" id="ficha-overlay" hidden>
+  <div class="ficha-card" role="dialog" aria-modal="true" aria-labelledby="ficha-titulo">
+    <button class="ficha-close" id="ficha-close" aria-label="Cerrar ficha">×</button>
+    <div class="ficha-tab">Ficha catalográfica</div>
+    <div id="ficha-contenido">
+      <p class="hint">Cargando…</p>
+    </div>
+  </div>
+</div>
+
+<footer class="colophon">Herramienta de gestión de colección · Diseñada para bibliotecas de la Red de Lectura Pública de Navarra</footer>
+
+<script src="app.js"></script>
+</body>
+</html>
