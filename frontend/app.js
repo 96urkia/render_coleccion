@@ -35,7 +35,7 @@ function fmtInt(n) { return n === null || n === undefined ? "—" : n.toLocaleSt
 const I18N = {
   es: {
     app_title: "Gestión de la Colección",
-    app_subtitle: "Fichero analítico del fondo bibliotecario — Red de Lectura Pública de Navarra",
+    app_subtitle: "Fichero analítico del fondo bibliotecario — Red de Bibliotecas Públicas de Navarra",
     ficha01: "Ficha 01",
     seleccion_biblioteca: "Selección de biblioteca",
     centro: "Centro",
@@ -136,7 +136,7 @@ const I18N = {
     ficha_sin_ejemplares: "Sin ejemplares localizados en la red.",
     ficha_titulo_no_disponible: "Título no disponible",
     ficha_nota_sistema: "Ficha generada automáticamente a partir del registro MARC de la red.",
-    colophon: "Herramienta de gestión de colección · Diseñada para bibliotecas de la Red de Lectura Pública de Navarra",
+    colophon: "Herramienta de gestión de colección · Diseñada para bibliotecas de la Red de Bibliotecas Públicas de Navarra",
     error_archivos_requeridos: "Sube los archivos requeridos (listado topográfico y catálogo).",
     procesando: "Procesando…",
     sin_sig: "s/sig.",
