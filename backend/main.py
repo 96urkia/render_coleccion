@@ -385,20 +385,27 @@ def analisis_general(session_id: str):
         pauta_hab, pauta_min, pauta_max = 1.5, 80000, 95000
 
     if total_docs < 2500:
-        diag_vol = {"nivel": "error", "texto": f"Alerta: suelo mínimo absoluto IFLA es de 2.500 obras. Tienes {total_docs:,}."}
+        diag_vol = {"nivel": "error", "clave": "vol_alerta_minimo", "valores": {"total": total_docs},
+                    "texto": f"Alerta: suelo mínimo absoluto IFLA es de 2.500 obras. Tienes {total_docs:,}."}
     elif total_docs < pauta_min:
-        diag_vol = {"nivel": "warning", "texto": f"Déficit de fondo: recomendado {pauta_min:,}-{pauta_max:,}. Tienes {total_docs:,}."}
+        diag_vol = {"nivel": "warning", "clave": "vol_deficit", "valores": {"min": pauta_min, "max": pauta_max, "total": total_docs},
+                    "texto": f"Déficit de fondo: recomendado {pauta_min:,}-{pauta_max:,}. Tienes {total_docs:,}."}
     elif total_docs > pauta_max:
-        diag_vol = {"nivel": "info", "texto": f"Fondo extenso: el rango inicial recomendado es {pauta_min:,}-{pauta_max:,}. Tienes {total_docs:,}."}
+        diag_vol = {"nivel": "info", "clave": "vol_extenso", "valores": {"min": pauta_min, "max": pauta_max, "total": total_docs},
+                    "texto": f"Fondo extenso: el rango inicial recomendado es {pauta_min:,}-{pauta_max:,}. Tienes {total_docs:,}."}
     else:
-        diag_vol = {"nivel": "success", "texto": f"Óptimo: volumen adecuado dentro del rango ({pauta_min:,}-{pauta_max:,})."}
+        diag_vol = {"nivel": "success", "clave": "vol_optimo", "valores": {"min": pauta_min, "max": pauta_max},
+                    "texto": f"Óptimo: volumen adecuado dentro del rango ({pauta_min:,}-{pauta_max:,})."}
 
     if docs_por_habitante > 3.5:
-        diag_hab = {"nivel": "warning", "texto": f"Colección demasiado grande: {docs_por_habitante:.2f} libros/persona (óptimo {pauta_hab}, máx. sugerido 3.5)."}
+        diag_hab = {"nivel": "warning", "clave": "hab_demasiado_grande", "valores": {"ratio": round(docs_por_habitante, 2), "optimo": pauta_hab},
+                    "texto": f"Colección demasiado grande: {docs_por_habitante:.2f} libros/persona (óptimo {pauta_hab}, máx. sugerido 3.5)."}
     elif docs_por_habitante < pauta_hab:
-        diag_hab = {"nivel": "warning", "texto": f"Ratio bajo: {docs_por_habitante:.2f} doc/hab. (mínimo recomendado {pauta_hab})."}
+        diag_hab = {"nivel": "warning", "clave": "hab_bajo", "valores": {"ratio": round(docs_por_habitante, 2), "minimo": pauta_hab},
+                    "texto": f"Ratio bajo: {docs_por_habitante:.2f} doc/hab. (mínimo recomendado {pauta_hab})."}
     else:
-        diag_hab = {"nivel": "success", "texto": f"Ratio óptimo: {docs_por_habitante:.2f} doc/hab."}
+        diag_hab = {"nivel": "success", "clave": "hab_optimo", "valores": {"ratio": round(docs_por_habitante, 2)},
+                    "texto": f"Ratio óptimo: {docs_por_habitante:.2f} doc/hab."}
 
     macro_counts = df["macro_seccion"].value_counts()
     tabla_macro = [
