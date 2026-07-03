@@ -92,7 +92,6 @@ const I18N = {
     resumen_pct_prestados: "% préstamos (uso activo): {{n}}%",
     resumen_anio_medio: "Año medio: {{n}}",
     sin_datos: "Sin datos",
-    clic_fila_hint: "Haz clic en una fila para ver la ficha catalográfica del registro (disponible desde el año de corte de la base de datos de red).",
     col_id: "ID",
     col_signatura: "Signatura",
     col_titulo: "Título",
@@ -213,7 +212,6 @@ const I18N = {
     resumen_pct_prestados: "% maileguak (erabilera aktiboa): {{n}}%",
     resumen_anio_medio: "Batez besteko urtea: {{n}}",
     sin_datos: "Daturik ez",
-    clic_fila_hint: "Egin klik errenkada batean erregistroaren fitxa katalografikoa ikusteko (sareko datu-basearen mozketa-urtetik aurrera eskuragarri).",
     col_id: "ID",
     col_signatura: "Signatura",
     col_titulo: "Izenburua",
@@ -612,6 +610,20 @@ function renderAnalisisGeneral(data) {
   }, { scales: { x: { ticks: { maxRotation: 60, minRotation: 60 } } } });
 }
 
+// ---------- descarga genérica de CSV ----------
+function descargarCsv(contenido, nombreArchivo) {
+  const blob = new Blob(["\ufeff" + contenido], { type: "text/csv;charset=utf-8;" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = nombreArchivo;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function csvEscape(valor) {
+  const s = valor === null || valor === undefined ? "" : String(valor);
+  return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
 // ==========================================
 // BLOQUE 1B: ANÁLISIS POR CDU
 // ==========================================
@@ -685,6 +697,21 @@ function bindSortableCdu(tableId, canvasId, chartKey, color) {
 bindSortableCdu("tabla-cdu-adultos", "chart-cdu-adultos", "cduAdultos", CHART_COLORS.azulPetroleo);
 bindSortableCdu("tabla-cdu-infantil", "chart-cdu-infantil", "cduInfantil", CHART_COLORS.marronCuero);
 
+function csvDeCdu(rows) {
+  const header = "Categoría;Volúmenes;% Uso;Año medio\n";
+  return header + rows.map(r => [r.categoria, r.volumenes, r.pct_uso, r.anio_medio].map(csvEscape).join(";")).join("\n");
+}
+$("#btn-csv-cdu-adultos").addEventListener("click", () => {
+  const rows = state.cache.cdu?.adultos || [];
+  if (!rows.length) return;
+  descargarCsv(csvDeCdu(rows), "analisis_cdu_adultos.csv");
+});
+$("#btn-csv-cdu-infantil").addEventListener("click", () => {
+  const rows = state.cache.cdu?.infantil || [];
+  if (!rows.length) return;
+  descargarCsv(csvDeCdu(rows), "analisis_cdu_infantil.csv");
+});
+
 function renderCduBlock(rowsOriginal, canvasId, tableId, chartKey, color) {
   const rows = ordenarFilas(tableId, rowsOriginal);
   const colores = coloresPorUso(rows, color);
@@ -744,7 +771,7 @@ async function cargarTablaSignatura() {
   $("#sig-count").textContent = t("resultados_encontrados", { n: fmtInt(data.total) });
   const tbody = $("#tabla-signatura tbody");
   tbody.innerHTML = data.filas.length
-    ? data.filas.map(f => `<tr class="fila-clicable" data-id-sistema="${f.id_sistema}"><td>${f.id_sistema}</td><td>${f.signatura}</td><td>${f.titulo}</td><td>${f.anio ?? "—"}</td><td>${f.categoria}</td><td>${f.prestamos}</td></tr>`).join("")
+    ? data.filas.map(f => `<tr><td>${f.id_sistema}</td><td>${f.signatura}</td><td>${f.titulo}</td><td>${f.anio ?? "—"}</td><td>${f.categoria}</td><td>${f.prestamos}</td></tr>`).join("")
     : `<tr><td colspan="6">${t("sin_resultados")}</td></tr>`;
 
   $("#resumen-sig").innerHTML = `
@@ -762,6 +789,41 @@ async function cargarTablaSignatura() {
   $("#pager-prev")?.addEventListener("click", () => { state.sigPage--; cargarTablaSignatura(); });
   $("#pager-next")?.addEventListener("click", () => { state.sigPage++; cargarTablaSignatura(); });
 }
+
+$("#btn-csv-sig").addEventListener("click", async () => {
+  const btn = $("#btn-csv-sig");
+  const textoOriginal = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = t("cargando");
+  try {
+    const seccion = $(".seg-btn.active", $("#filtro-seccion")).dataset.val;
+    const paramsBase = {
+      session_id: state.sessionId,
+      seccion,
+      busqueda: $("#input-busqueda-sig").value,
+      categoria: $("#select-categoria-sig").value,
+      sub: $("#select-sub-sig").value,
+      prestamo: $("#select-prestamo-sig").value,
+      page_size: 5000,
+    };
+    let page = 1;
+    let todas = [];
+    let total = Infinity;
+    while (todas.length < total) {
+      const data = await apiGet("/api/analisis/signatura", { ...paramsBase, page });
+      total = data.total;
+      todas = todas.concat(data.filas);
+      if (!data.filas.length) break;
+      page++;
+    }
+    const header = "ID;Signatura;Título;Año;Categoría;Préstamos\n";
+    const csv = header + todas.map(f => [f.id_sistema, f.signatura, f.titulo, f.anio, f.categoria, f.prestamos].map(csvEscape).join(";")).join("\n");
+    descargarCsv(csv, "analisis_signatura.csv");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = textoOriginal;
+  }
+});
 
 $("#filtro-seccion").addEventListener("click", e => {
   const btn = e.target.closest(".seg-btn");
@@ -878,6 +940,18 @@ function renderAcordeonCdu() {
     });
   });
 }
+$("#btn-csv-cdu-compra").addEventListener("click", () => {
+  const grupo = ultimaRecCdu[seccionCduActiva] || {};
+  const claves = Object.keys(grupo);
+  if (!claves.length) return;
+  const header = "Categoría / CDU;Título;Autor;Año;CDU;Nº bibliotecas en red\n";
+  const filas = claves.flatMap(k => {
+    const bloque = grupo[k];
+    const nombreBloque = bloque.titulo || k;
+    return bloque.items.map(it => [nombreBloque, it.titulo, it.autor, it.anio, it.cdu, it.num_bibliotecas].map(csvEscape).join(";"));
+  });
+  descargarCsv(header + filas.join("\n"), `sugerencias_cdu_${seccionCduActiva}.csv`);
+});
 
 // ==========================================
 // FICHA CATALOGRÁFICA
@@ -889,7 +963,6 @@ function bindFilasClicables(tableId) {
     abrirFicha(fila.dataset.idSistema);
   });
 }
-bindFilasClicables("tabla-signatura");
 bindFilasClicables("tabla-rec-gen");
 $("#acordeon-cdu").addEventListener("click", e => {
   const fila = e.target.closest("tr.fila-clicable");

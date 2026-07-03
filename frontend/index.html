@@ -130,6 +130,9 @@
       <div class="sub-panel" data-subpanel="cdu" hidden>
         <h3 data-i18n="seccion_adultos">Sección adultos</h3>
         <div class="chart-canvas-wrap chart-canvas-wrap--wide"><canvas id="chart-cdu-adultos"></canvas></div>
+        <div class="filter-row">
+          <button id="btn-csv-cdu-adultos" class="btn-secondary small" data-i18n="descargar_csv">Descargar CSV</button>
+        </div>
         <table class="ledger-table sortable-table" id="tabla-cdu-adultos">
           <thead><tr>
             <th data-key="categoria" data-i18n="col_categoria_cdu">Categoría / CDU</th>
@@ -142,6 +145,9 @@
 
         <h3 data-i18n="seccion_infantil">Sección infantil / juvenil</h3>
         <div class="chart-canvas-wrap chart-canvas-wrap--wide"><canvas id="chart-cdu-infantil"></canvas></div>
+        <div class="filter-row">
+          <button id="btn-csv-cdu-infantil" class="btn-secondary small" data-i18n="descargar_csv">Descargar CSV</button>
+        </div>
         <table class="ledger-table sortable-table" id="tabla-cdu-infantil">
           <thead><tr>
             <th data-key="categoria" data-i18n="col_categoria_tejuelo">Categoría / Tejuelo</th>
@@ -185,7 +191,9 @@
         </div>
 
         <p class="hint" id="sig-count"></p>
-        <p class="hint" data-i18n="clic_fila_hint">Haz clic en una fila para ver la ficha catalográfica del registro (disponible desde el año de corte de la base de datos de red).</p>
+        <div class="filter-row">
+          <button id="btn-csv-sig" class="btn-secondary small" data-i18n="descargar_csv">Descargar CSV</button>
+        </div>
         <div class="table-wrap">
           <table class="ledger-table" id="tabla-signatura">
             <thead><tr>
@@ -240,6 +248,7 @@
         <div class="filter-row">
           <input type="text" id="input-busqueda-cdu" data-i18n-placeholder="filtrar_cdu_placeholder" placeholder="Filtrar por CDU · admite comodines (*), ej. 004*">
           <button id="btn-cargar-cdu" class="btn-secondary small" data-i18n="cargar_sugerencias">Cargar sugerencias</button>
+          <button id="btn-csv-cdu-compra" class="btn-secondary small" data-i18n="descargar_csv">Descargar CSV</button>
         </div>
 
         <div class="segmented" id="filtro-seccion-cdu">
