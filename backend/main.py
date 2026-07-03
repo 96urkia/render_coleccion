@@ -571,7 +571,7 @@ def recomendaciones_generales(biblioteca: str, limite: int = 50):
         return {"resultados": []}
     return {
         "resultados": [
-            {"id_sistema": int(r.id_sistema), "titulo": r.titulo, "autor": r.autor, "anio": r.anio, "num_bibliotecas": int(r.total_bibliotecas)}
+            {"id_sistema": r.id_sistema, "titulo": r.titulo, "autor": r.autor, "anio": r.anio, "num_bibliotecas": int(r.total_bibliotecas)}
             for r in df.itertuples()
         ]
     }
