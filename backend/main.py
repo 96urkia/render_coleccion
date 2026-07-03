@@ -731,11 +731,11 @@ def ficha_catalografica(id_sistema: str):
 
     campos_extra = {}
     for tag, etiqueta in CAMPOS_FICHA.items():
-        valores = [str(c) for c in record.get_fields(tag)]
+        valores = [c.format_field().strip() for c in record.get_fields(tag)]
         if valores:
             campos_extra[etiqueta] = valores
 
-    materias = [str(c) for c in record.get_fields("650")]
+    materias = [c.format_field().strip() for c in record.get_fields("650")]
 
     ejemplares = conn.execute(
         "SELECT biblioteca, seccion, signatura, codigo_barras FROM ejemplares WHERE id_sistema = ?",
