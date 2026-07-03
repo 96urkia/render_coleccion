@@ -106,6 +106,13 @@ def _preparar_base_de_datos():
             "REGEXP", 2,
             lambda expr, item: bool(re.search(expr, str(item), re.IGNORECASE)) if item else False,
         )
+        # Índices para que los JOIN/GROUP BY de recomendaciones (que operan sobre
+        # el catálogo completo de la red) no acaben haciendo un full table scan
+        # en cada petición. CREATE INDEX IF NOT EXISTS es barato si ya existen.
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_ejemplares_id_sistema ON ejemplares(id_sistema)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_ejemplares_biblioteca ON ejemplares(biblioteca)")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_libros_id_sistema ON libros(id_sistema)")
+        conn.commit()
         global _db_conn
         _db_conn = conn
         _db_status["ready"] = True
@@ -533,12 +540,18 @@ def signatura(
 # ---------- Recomendaciones (usan la BD de la red completa) ----------
 
 def obtener_recomendaciones_automaticas(conexion, biblioteca, limite=50):
+    # NOT EXISTS con subconsulta correlacionada suele optimizar mucho mejor en SQLite
+    # que NOT IN con un subselect independiente, sobre todo con un índice en
+    # ejemplares(id_sistema, biblioteca). Con NOT IN, SQLite normalmente materializa
+    # toda la subconsulta y compara fila a fila, algo muy costoso si ejemplares
+    # contiene el catálogo completo de la red.
     query = """
         SELECT l.id_sistema, l.titulo, l.autor, l.anio, COUNT(DISTINCT e.biblioteca) as total_bibliotecas
         FROM libros l
         JOIN ejemplares e ON l.id_sistema = e.id_sistema
-        WHERE l.id_sistema NOT IN (
-            SELECT DISTINCT id_sistema FROM ejemplares WHERE TRIM(UPPER(biblioteca)) = ?
+        WHERE NOT EXISTS (
+            SELECT 1 FROM ejemplares e2
+            WHERE e2.id_sistema = l.id_sistema AND TRIM(UPPER(e2.biblioteca)) = ?
         )
         GROUP BY l.id_sistema, l.titulo, l.autor, l.anio
         ORDER BY total_bibliotecas DESC
