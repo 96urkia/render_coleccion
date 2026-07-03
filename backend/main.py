@@ -42,7 +42,7 @@ DB_PATH = os.environ.get("DB_PATH", "gestion_coleccion.db")
 DB_URL = os.environ.get(
     "DB_URL",
     '''
-    https://www.dropbox.com/scl/fi/xpmxz61of4ohqjuzju7e3/bibliotecas_navarra2_filtrado.db?rlkey=dyiscet4s4wts02ffmffj9n6g&st=jlto2dmf&dl=0
+    https://www.dropbox.com/scl/fi/xpmxz61of4ohqjuzju7e3/bibliotecas_navarra2_filtrado.db?rlkey=dyiscet4s4wts02ffmffj9n6g&st=jlto2dmf&dl=1
     
     ''',
 )
