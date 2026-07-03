@@ -46,6 +46,26 @@ body {
   border-bottom: 3px double var(--ink);
 }
 .masthead-inner { display: flex; align-items: center; gap: 1rem; max-width: 1200px; margin: 0 auto; }
+.masthead-inner > div:nth-child(2) { flex: 1; }
+
+/* ===== Language switcher ===== */
+.lang-switch { display: inline-flex; border: 1px solid var(--spine-green); border-radius: 4px; overflow: hidden; flex-shrink: 0; }
+.lang-btn {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  padding: 0.35rem 0.7rem;
+  border: none;
+  background: #fff;
+  color: var(--spine-green-dark);
+  cursor: pointer;
+  border-right: 1px solid var(--spine-green);
+}
+.lang-btn:last-child { border-right: none; }
+.lang-btn.active { background: var(--spine-green); color: #fff; }
+.lang-btn:hover:not(.active) { background: rgba(47,82,51,0.1); }
+@media (max-width: 700px) { .masthead-inner { flex-wrap: wrap; } }
 .stamp-mark {
   font-size: 2.4rem;
   transform: rotate(-6deg);
@@ -284,10 +304,38 @@ h3:first-child { margin-top: 0.2rem; }
   padding: 0.4rem 0.6rem;
 }
 .ledger-table td { padding: 0.4rem 0.6rem; border-bottom: 1px solid var(--rule); }
+.uso-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  border: 1px solid rgba(31,42,36,0.25);
+  margin-right: 0.45rem;
+  vertical-align: middle;
+}
 .ledger-table tbody tr:hover { background: rgba(47,82,51,0.05); }
 .table-wrap { max-height: 480px; overflow-y: auto; border: 1px solid var(--rule); border-radius: 3px; }
 .table-wrap .ledger-table { margin-bottom: 0; }
 .table-wrap thead th { position: sticky; top: 0; background: var(--paper-card); }
+
+/* ===== Sortable tables (Análisis por CDU) ===== */
+.sortable-table th[data-key] {
+  cursor: pointer;
+  user-select: none;
+  position: relative;
+  padding-right: 1.2rem;
+  transition: color 0.12s ease;
+}
+.sortable-table th[data-key]:hover { color: var(--spine-green-dark); }
+.sortable-table th[data-key]::after {
+  content: "↕";
+  position: absolute;
+  right: 0.3rem;
+  opacity: 0.35;
+  font-size: 0.75em;
+}
+.sortable-table th[data-key].sort-asc::after { content: "↑"; opacity: 1; color: var(--spine-green-dark); }
+.sortable-table th[data-key].sort-desc::after { content: "↓"; opacity: 1; color: var(--spine-green-dark); }
 
 .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.2rem; margin-top: 1rem; }
 @media (max-width: 700px) { .chart-grid { grid-template-columns: 1fr; } }
@@ -323,8 +371,39 @@ h3:first-child { margin-top: 0.2rem; }
 .seg-btn:last-child { border-right: none; }
 .seg-btn.active { background: var(--spine-green); color: #fff; }
 
-.resumen-kpi { display: flex; gap: 1.2rem; margin: 0.8rem 0 1rem; font-family: var(--font-mono); font-size: 0.85rem; flex-wrap: wrap; }
-.resumen-kpi span { background: #fff; border: 1px solid var(--rule); border-radius: 3px; padding: 0.3rem 0.7rem; }
+/* Bloque de resumen: se distingue visualmente de los filtros de arriba porque
+   NO es interactivo (no son botones/segmentos), sino una nota informativa,
+   con el mismo lenguaje visual que los diag-box "info" del análisis general. */
+.resumen-block {
+  background: #E7EEF3;
+  border: 1px solid #3E6B8A;
+  border-left: 4px solid #3E6B8A;
+  border-radius: 3px;
+  padding: 0.7rem 0.9rem 0.8rem;
+  margin: 0.8rem 0 1rem;
+}
+.resumen-block-label {
+  margin: 0 0 0.5rem;
+  font-family: var(--font-body);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #234158;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+.resumen-block-icon { font-family: var(--font-mono); font-size: 0.9rem; }
+.resumen-block-label em { font-style: italic; font-weight: 400; text-transform: none; letter-spacing: normal; }
+.resumen-kpi { display: flex; gap: 1.2rem; font-family: var(--font-mono); font-size: 0.85rem; flex-wrap: wrap; margin: 0; }
+.resumen-kpi span {
+  background: #fff;
+  border: 1px solid #3E6B8A;
+  border-radius: 3px;
+  padding: 0.3rem 0.7rem;
+  cursor: default;
+}
 
 .pager { display: flex; align-items: center; gap: 0.8rem; margin-top: 0.8rem; font-size: 0.85rem; }
 .pager button { font-family: var(--font-body); font-size: 0.82rem; padding: 0.3rem 0.7rem; border: 1px solid var(--rule); background: #fff; border-radius: 3px; cursor: pointer; }
