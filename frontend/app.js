@@ -155,7 +155,7 @@ const I18N = {
   },
   eu: {
     app_title: "Bildumaren kudeaketa",
-    app_subtitle: "Funts bibliotekarioaren fitxa analitikoa — Nafarroako Irakurketa Publikoaren Sarea",
+    app_subtitle: "Funts bibliotekarioaren fitxa analitikoa — Nafarroako Liburutegi Publikoaren Sarea",
     ficha01: "01 fitxa",
     seleccion_biblioteca: "Liburutegiaren hautaketa",
     centro: "Zentroa",
@@ -256,7 +256,7 @@ const I18N = {
     ficha_sin_ejemplares: "Ez da alerik aurkitu sarean.",
     ficha_titulo_no_disponible: "Izenburua ez dago eskuragarri",
     ficha_nota_sistema: "Fitxa automatikoki sortu da sareko MARC erregistrotik abiatuta.",
-    colophon: "Bildumaren kudeaketarako tresna · Nafarroako Irakurketa Publikoaren Sarerako diseinatua",
+    colophon: "Bildumaren kudeaketarako tresna · Nafarroako Liburutegi Publikoen Sarerako diseinatua",
     error_archivos_requeridos: "Igo beharrezko fitxategiak (zerrenda topografikoa eta katalogoa).",
     procesando: "Prozesatzen…",
     sin_sig: "sig. gabe",
