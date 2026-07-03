@@ -17,6 +17,16 @@ const state = {
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
+// ---------- paleta de gráficos: coherente con la estética "fichero de biblioteca" ----------
+const CHART_COLORS = {
+  verde: "#2F5233",
+  oro: "#B08D3E",
+  rojo: "#A23B2E",
+  azulPetroleo: "#3E6B72",
+  marronCuero: "#8C6238",
+  ciruela: "#6B4F6B",
+};
+
 function fmtInt(n) { return n === null || n === undefined ? "—" : n.toLocaleString(state.lang === "eu" ? "eu-ES" : "es-ES"); }
 
 // ==========================================
@@ -894,16 +904,6 @@ $("#ficha-overlay").addEventListener("click", e => {
 document.addEventListener("keydown", e => {
   if (e.key === "Escape" && !$("#ficha-overlay").hidden) $("#ficha-overlay").hidden = true;
 });
-
-// ---------- paleta de gráficos: coherente con la estética "fichero de biblioteca" ----------
-const CHART_COLORS = {
-  verde: "#2F5233",
-  oro: "#B08D3E",
-  rojo: "#A23B2E",
-  azulPetroleo: "#3E6B72",
-  marronCuero: "#8C6238",
-  ciruela: "#6B4F6B",
-};
 
 // ---------- helper de gráficos ----------
 function drawChart(key, canvasId, type, data, extraOptions = {}) {
