@@ -355,6 +355,7 @@ h3:first-child { margin-top: 0.2rem; }
   z-index: 50;
   overflow-y: auto;
 }
+.ficha-overlay[hidden] { display: none; }
 .ficha-card {
   background: var(--paper-card);
   border: 1px solid var(--rule);
