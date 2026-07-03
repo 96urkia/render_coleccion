@@ -742,14 +742,21 @@ def ficha_catalografica(id_sistema: str):
         (id_sistema,),
     ).fetchall()
 
+    campo_260 = record["260"] if "260" in record else None
+
     return {
         "id_sistema": id_sistema,
         "titulo": record.title,
         "autor": record.author,
         "isbn": record.isbn,
         "cdu": record["080"]["a"] if "080" in record and "a" in record["080"] else None,
-        "editorial": record["260"]["b"] if "260" in record and "b" in record["260"] else None,
-        "anio": record["260"]["c"] if "260" in record and "c" in record["260"] else None,
+        "lugar": campo_260["a"] if campo_260 and "a" in campo_260 else None,
+        "editorial": campo_260["b"] if campo_260 and "b" in campo_260 else None,
+        "anio": campo_260["c"] if campo_260 and "c" in campo_260 else None,
+        "edicion": campos_extra.get("Edición", [None])[0],
+        "descripcion_fisica": campos_extra.get("Descripción física", [None])[0],
+        "serie": campos_extra.get("Serie", [None])[0],
+        "notas": (campos_extra.get("Notas", []) + campos_extra.get("Contenido", []) + campos_extra.get("Resumen", [])),
         "materias": materias,
         "campos": campos_extra,
         "ejemplares": [
