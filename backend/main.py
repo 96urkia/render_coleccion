@@ -767,6 +767,13 @@ def ficha_catalografica(id_sistema: str):
 
 
 # ==========================================
+# SERVIR LOS VÍDEOS DE AYUDA (backend/videos)
+# ==========================================
+VIDEOS_DIR = os.environ.get("VIDEOS_DIR", "/app/videos")
+if os.path.isdir(VIDEOS_DIR):
+    app.mount("/videos", StaticFiles(directory=VIDEOS_DIR), name="videos")
+
+# ==========================================
 # SERVIR EL FRONTEND ESTÁTICO
 # ==========================================
 FRONTEND_DIR = os.environ.get("FRONTEND_DIR", "/app/frontend")
