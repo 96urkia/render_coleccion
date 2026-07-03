@@ -482,7 +482,7 @@ def signatura(
     sub: str = "Todas",
     prestamo: str = "todos",
     page: int = Query(1, ge=1),
-    page_size: int = Query(100, ge=1, le=500),
+    page_size: int = Query(100, ge=1, le=5000),
 ):
     s = get_session(session_id)
     df = s["df"]
