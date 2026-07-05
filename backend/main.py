@@ -171,9 +171,15 @@ def _decodificar_bytes(data: bytes) -> str:
     if not data:
         return ""
     try:
-        return data.decode("utf-8")
+        texto = data.decode("utf-8")
     except UnicodeDecodeError:
-        return data.decode("cp1252", errors="replace")
+        texto = data.decode("cp1252", errors="replace")
+    # AbsysNet exporta a veces con fin de línea Windows (\r\n). Varias regex
+    # de más abajo anclan "^"/"$" a límite de línea (p.ej. para detectar el
+    # nº de registro solo en su línea); si queda un "\r" colgando justo antes
+    # del "\n", esas anclas no casan y el fichero entero deja de parsearse
+    # bien. Normalizamos aquí una vez para no repetir el problema en cada regex.
+    return texto.replace("\r\n", "\n").replace("\r", "\n")
 
 
 # Encabezamiento de autor persona: "APELLIDOS, Nombre (fechas)". Si la línea
@@ -202,10 +208,17 @@ def _parsear_fichas_catalogo(cat_text: str) -> dict:
         "", cat_text, flags=re.MULTILINE,
     )
 
-    matches = list(re.finditer(r"\b\d{7,}\b", cat_text_limpio))
+    # El número de registro (código de barras) siempre aparece SOLO en su
+    # propia línea, justo debajo de la signatura. No basta con \b\d{7,}\b:
+    # un ISBN-13 sin guiones ("ISBN 9788491169031") también tiene 7+ dígitos
+    # con límites de palabra y, si se usa esa regex laxa, se confunde con el
+    # inicio de un registro nuevo, cortando la ficha real justo ahí y
+    # perdiendo materias/autor de ese registro en adelante. Exigir que el
+    # número esté solo en su línea evita ese falso corte.
+    matches = list(re.finditer(r"^[ \t]*(\d{7,})[ \t]*$", cat_text_limpio, re.MULTILINE))
     fichas = {}
     for i, m in enumerate(matches):
-        rid = int(m.group())
+        rid = int(m.group(1))
         start = m.end()
         end = matches[i + 1].start() if i < len(matches) - 1 else len(cat_text_limpio)
         bloque = cat_text_limpio[start:end]
@@ -302,9 +315,11 @@ def procesar_datos(topo_bytes, nunca_bytes, mas2_bytes, catalogo_bytes, tipo_ana
     cat_text = _decodificar_bytes(catalogo_bytes)
     cat_text_sin_fechas = re.sub(r"\b\d{2}/\d{2}/\d{4}\b", "", cat_text)
     year_dict = {}
-    matches = list(re.finditer(r"\b\d{7,}\b", cat_text_sin_fechas))
+    # Mismo criterio que en _parsear_fichas_catalogo: el nº de registro va
+    # solo en su línea, para no confundirlo con un ISBN-13 sin guiones.
+    matches = list(re.finditer(r"^[ \t]*(\d{7,})[ \t]*$", cat_text_sin_fechas, re.MULTILINE))
     for i, m in enumerate(matches):
-        rid = int(m.group())
+        rid = int(m.group(1))
         start = m.start()
         end = matches[i + 1].start() if i < len(matches) - 1 else len(cat_text_sin_fechas)
         block = cat_text_sin_fechas[start:end]
@@ -438,12 +453,19 @@ def _wildcard_mask(series: pd.Series, patron: str) -> pd.Series:
     return serie_norm.str.startswith(patron, na=False)
 
 
+def _sin_acentos(texto: str) -> str:
+    """Quita diacríticos para que buscar 'poesia' encuentre 'poesía', etc."""
+    import unicodedata
+    return "".join(c for c in unicodedata.normalize("NFKD", texto) if not unicodedata.combining(c))
+
+
 def _wildcard_contains_mask(series: pd.Series, patron: str) -> pd.Series:
     """Como _wildcard_mask pero busca la coincidencia en cualquier parte del
     texto (útil para título/autor/materia, donde no tiene sentido exigir que
-    empiece justo por lo tecleado)."""
-    serie_norm = series.astype(str).str.upper()
-    regex_patron = re.escape(patron).replace(r"\*", ".*")
+    empiece justo por lo tecleado). Ignora acentos en ambos lados."""
+    serie_norm = series.astype(str).map(_sin_acentos).str.upper()
+    patron_norm = _sin_acentos(patron)
+    regex_patron = re.escape(patron_norm).replace(r"\*", ".*")
     return serie_norm.str.contains(regex_patron, na=False, regex=True)
 
 
@@ -661,7 +683,8 @@ def signatura(
             if "*" in busqueda:
                 df = df[_wildcard_contains_mask(df[columna], busqueda)]
             else:
-                df = df[df[columna].astype(str).str.upper().str.contains(re.escape(busqueda), na=False)]
+                serie_norm = df[columna].astype(str).map(_sin_acentos).str.upper()
+                df = df[serie_norm.str.contains(re.escape(_sin_acentos(busqueda)), na=False)]
 
     if categoria != "Todas":
         df = df[df["categoria"] == categoria]
