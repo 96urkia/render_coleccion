@@ -288,6 +288,34 @@ def _parsear_fichas_catalogo(cat_text: str) -> dict:
     return fichas
 
 
+def _parsear_linea_topo(line: str):
+    """Divide una línea del listado (topográfico / más prestados / no
+    prestados) por las columnas de ancho fijo que usa AbsysNet:
+
+        Signatura                  Sig. supl.   Suc.  Loc.   Cod. Bar.  Nº Reg.   Título
+        0                          27           40    46     53         64        74
+
+    Antes se usaba una regex "(.+?)\\s+84\\s+[A-Z]{2}" para cortar la
+    signatura, pero esa regex no distingue dónde acaba la columna
+    "Signatura" y empieza "Sig. supl." (p.ej. género "Histórica",
+    "Policíaca"): se comía las dos como si fueran una sola, y ese texto de
+    género acababa filtrándose en búsquedas de materia por error. Cortar
+    por posición fija, tal cual vienen alineadas las columnas en el
+    listado, evita esa mezcla. IMPORTANTE: no hacer .strip() a la línea
+    completa antes de esto o se pierde la alineación de columnas.
+    """
+    def col(a, b=None):
+        return (line[a:b] if b is not None else line[a:]).strip()
+
+    return {
+        "signatura": col(0, 27),
+        "sig_supl": col(27, 40),
+        "cod_bar": col(53, 64),
+        "nreg": col(64, 74),
+        "titulo": col(74),
+    }
+
+
 def procesar_datos(topo_bytes, nunca_bytes, mas2_bytes, catalogo_bytes, tipo_analisis, num_caracteres):
     if not topo_bytes or not catalogo_bytes:
         return None, 0, {}
@@ -295,18 +323,26 @@ def procesar_datos(topo_bytes, nunca_bytes, mas2_bytes, catalogo_bytes, tipo_ana
     topo_text = _decodificar_bytes(topo_bytes)
     data = []
     for line in topo_text.split("\n"):
-        line = line.strip()
-        if not line or re.search(r"^(\d{2}/\d{2}/\d{4}|LISTADO|Signatura|-----)", line):
+        line_sin_salto = line.rstrip("\n")
+        cabecera = line_sin_salto.strip()
+        if not cabecera or re.search(r"^(\d{2}/\d{2}/\d{4}|LISTADO|Signatura|-----)", cabecera):
             continue
-        match = re.search(r"\b(\d{7,})\b", line)
-        if not match:
+        campos = _parsear_linea_topo(line_sin_salto)
+        cod_bar = campos["cod_bar"]
+        if not re.fullmatch(r"\d{6,}", cod_bar):
+            # Línea sin código de barras reconocible (p.ej. fila rota o de
+            # continuación): se ignora, igual que hacía la versión anterior
+            # cuando no encontraba ningún grupo de 7+ dígitos.
             continue
-        record_id = int(match.group(1))
-        sign_match = re.search(r"(.+?)\s+84\s+[A-Z]{2}", line)
-        signatura = sign_match.group(1).strip() if sign_match else line
-        title_match = re.search(r"\d{7,}\s+(.{10,})", line)
-        title = title_match.group(1).strip() if title_match else "Título no detectado"
-        data.append({"record_id": record_id, "signatura_real": signatura, "titulo": title})
+        record_id = int(cod_bar)
+        signatura = campos["signatura"]
+        titulo = campos["titulo"].rstrip(" /") or "Título no detectado"
+        data.append({
+            "record_id": record_id,
+            "signatura_real": signatura,
+            "sig_supl": campos["sig_supl"],
+            "titulo": titulo,
+        })
 
     df_topo = pd.DataFrame(data).drop_duplicates(subset=["record_id"])
     if df_topo.empty:
