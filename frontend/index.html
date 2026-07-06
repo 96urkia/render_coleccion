@@ -221,7 +221,7 @@
     <div class="tab-panel" data-panel="compras" hidden>
       <nav class="guide-subtabs" id="subtabs-compras">
         <button class="guide-subtab active" data-subtab="generales" data-i18n="rec_generales">Recomendaciones generales</button>
-        <button class="guide-subtab" data-subtab="cdu-compra" data-i18n="rec_cdu">Recomendaciones por CDU</button>
+        <button class="guide-subtab" data-subtab="cdu-compra" data-i18n="rec_cdu">Recomendaciones específicas</button>
       </nav>
 
       <div class="sub-panel" data-subpanel="generales">
@@ -246,13 +246,19 @@
       </div>
 
       <div class="sub-panel" data-subpanel="cdu-compra" hidden>
-        <h3 data-i18n="sugerencias_cdu">Sugerencias de adquisición por CDU</h3>
+        <h3 data-i18n="rec_cdu">Recomendaciones específicas</h3>
         <div class="filter-row">
           <label><span data-i18n="max_subcategoria">Máx. por subcategoría:</span> <input type="number" id="input-limite-cdu" value="10" min="1" max="100"></label>
           <label><span data-i18n="anio_minimo">Año mínimo:</span> <input type="number" id="input-anio-cdu" value="2015" min="1800" max="2026"></label>
         </div>
         <div class="filter-row">
-          <input type="text" id="input-busqueda-cdu" data-i18n-placeholder="filtrar_cdu_placeholder" placeholder="Filtrar por CDU · admite comodines (*), ej. 004*">
+          <select id="select-campo-busqueda-cdu">
+            <option value="cdu" data-i18n="campo_busqueda_cdu">CDU</option>
+            <option value="titulo" data-i18n="campo_busqueda_titulo">Título</option>
+            <option value="autor" data-i18n="campo_busqueda_autor">Autor</option>
+            <option value="materia" data-i18n="campo_busqueda_materia">Materia</option>
+          </select>
+          <input type="text" id="input-busqueda-cdu" data-i18n-placeholder="placeholder_busqueda_cdu" placeholder="Filtrar por CDU · admite comodines (*), ej. 004*">
           <button id="btn-cargar-cdu" class="btn-secondary small" data-i18n="cargar_sugerencias">Cargar sugerencias</button>
           <button id="btn-csv-cdu-compra" class="btn-secondary small" data-i18n="descargar_csv">Descargar CSV</button>
         </div>

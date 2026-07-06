@@ -81,6 +81,7 @@ const I18N = {
     solo_infantil: "Solo infantil / juvenil",
     buscar_signatura_placeholder: "Buscar por signatura / CDU · admite comodines (*)",
     campo_busqueda_signatura: "Signatura / CDU",
+    campo_busqueda_cdu: "CDU",
     campo_busqueda_titulo: "Título",
     campo_busqueda_autor: "Autor",
     campo_busqueda_materia: "Materia",
@@ -88,6 +89,7 @@ const I18N = {
     placeholder_busqueda_titulo: "Buscar por título",
     placeholder_busqueda_autor: "Buscar por autor",
     placeholder_busqueda_materia: "Buscar por materia",
+    placeholder_busqueda_cdu: "Filtrar por CDU · admite comodines (*), ej. 004*",
     ficha_tab_isbd_propia: "Ficha",
     ficha_nota_propia: "Ficha generada a partir del catálogo subido para este análisis.",
     todos_prestamos: "Todos los préstamos",
@@ -115,7 +117,7 @@ const I18N = {
     pager_siguiente: "Siguiente →",
     pager_pagina: "Página {{a}} de {{b}}",
     rec_generales: "Recomendaciones generales",
-    rec_cdu: "Recomendaciones por CDU",
+    rec_cdu: "Recomendaciones específicas",
     titulos_populares: "Títulos populares en la red ausentes en tu centro",
     numero_titulos: "Número de títulos:",
     cargar: "Cargar",
@@ -211,6 +213,7 @@ const I18N = {
     solo_infantil: "Haurrak eta gazteak soilik",
     buscar_signatura_placeholder: "Bilatu signatura / CDUaren arabera · asterisko (*) onartzen du",
     campo_busqueda_signatura: "Signatura / CDU",
+    campo_busqueda_cdu: "CDU",
     campo_busqueda_titulo: "Izenburua",
     campo_busqueda_autor: "Egilea",
     campo_busqueda_materia: "Gaia",
@@ -218,6 +221,7 @@ const I18N = {
     placeholder_busqueda_titulo: "Bilatu izenburuaren arabera",
     placeholder_busqueda_autor: "Bilatu egilearen arabera",
     placeholder_busqueda_materia: "Bilatu gaiaren arabera",
+    placeholder_busqueda_cdu: "Iragazi CDUaren arabera · komodinak onartzen ditu (*), adib. 004*",
     ficha_tab_isbd_propia: "Fitxa",
     ficha_nota_propia: "Fitxa analisi honetarako igotako katalogotik sortua.",
     todos_prestamos: "Mailegu guztiak",
@@ -245,7 +249,7 @@ const I18N = {
     pager_siguiente: "Hurrengoa →",
     pager_pagina: "{{a}}/{{b}} orria",
     rec_generales: "Gomendio orokorrak",
-    rec_cdu: "CDUaren araberako gomendioak",
+    rec_cdu: "Gomendio espezifikoak",
     titulos_populares: "Sarean ezagunak diren baina zure zentroan ez dauden izenburuak",
     numero_titulos: "Izenburu kopurua:",
     cargar: "Kargatu",
@@ -971,6 +975,10 @@ $("#filtro-seccion-cdu").addEventListener("click", e => {
   renderAcordeonCdu();
 });
 $("#btn-cargar-cdu").addEventListener("click", cargarRecomendacionesCdu);
+$("#select-campo-busqueda-cdu").addEventListener("change", () => {
+  const campo = $("#select-campo-busqueda-cdu").value;
+  $("#input-busqueda-cdu").placeholder = t(`placeholder_busqueda_${campo}`);
+});
 
 let ultimaRecCdu = { adultos: {}, infantil: {} };
 async function cargarRecomendacionesCdu() {
@@ -978,7 +986,8 @@ async function cargarRecomendacionesCdu() {
     biblioteca: state.biblioteca,
     limite_cdu: $("#input-limite-cdu").value || 10,
     anio_minimo: $("#input-anio-cdu").value || 2015,
-    busqueda_cdu: $("#input-busqueda-cdu").value,
+    campo: $("#select-campo-busqueda-cdu").value,
+    busqueda: $("#input-busqueda-cdu").value,
   };
   ultimaRecCdu = await apiGet("/api/recomendaciones/cdu", params);
   renderAcordeonCdu();
