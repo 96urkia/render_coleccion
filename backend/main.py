@@ -890,30 +890,26 @@ def _clasificar_libro_cdu(cdu: str, todas_signaturas: str):
 
 
 def _ids_con_materia(conn, ids_sistema: list, busqueda: str) -> set:
-    """Devuelve el subconjunto de id_sistema cuyo registro MARC completo
-    (tabla marc_completo) contiene el texto buscado. La base de datos de
-    la red no tiene una columna "materia" propia: las materias solo viven
-    dentro del XML MARC completo (campo 650). En vez de parsear MARC campo
-    a campo para cada fila (lento si son miles), se hace una búsqueda de
-    texto simple e insensible a acentos sobre el propio marcxml guardado;
-    es una aproximación suficiente para saber si una obra trata de un tema,
-    y evita tener que traer/parsear pymarc por cada candidato.
-    Si la base de datos no tiene la tabla marc_completo, devuelve un
-    conjunto vacío (equivalente a "no hay resultados por materia")."""
+    """Devuelve el subconjunto de id_sistema cuya tabla `materias` (una fila
+    por cada campo 650 del registro MARC, tal como la genera el script de
+    importación) contiene el texto buscado, insensible a mayúsculas/acentos.
+    Antes se buscaba dentro del XML completo de `marc_completo`, pero esa
+    tabla puede venir vacía o incompleta para muchos registros; `materias`
+    es la fuente correcta y siempre poblada por el propio proceso de carga."""
     if not ids_sistema:
         return set()
     try:
         placeholders = ",".join("?" * len(ids_sistema))
         filas = conn.execute(
-            f"SELECT id_sistema, marcxml FROM marc_completo WHERE id_sistema IN ({placeholders})",
+            f"SELECT id_sistema, materia FROM materias WHERE id_sistema IN ({placeholders})",
             ids_sistema,
         ).fetchall()
     except sqlite3.OperationalError:
         return set()
     busqueda_norm = _sin_acentos(busqueda.upper())
     return {
-        id_sistema for id_sistema, marcxml in filas
-        if marcxml and busqueda_norm in _sin_acentos(marcxml.upper())
+        id_sistema for id_sistema, materia in filas
+        if materia and busqueda_norm in _sin_acentos(materia.upper())
     }
 
 
