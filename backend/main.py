@@ -687,6 +687,19 @@ CAMPOS_BUSQUEDA_SIGNATURA = {
 }
 
 
+def _texto_contains_mask(series: pd.Series, busqueda: str) -> pd.Series:
+    """Máscara de coincidencia "contiene", insensible a mayúsculas y acentos,
+    con soporte opcional de comodín "*". Usada para título/autor/materia
+    tanto en el análisis por signatura como en recomendaciones específicas.
+    Mayúsculas/acentos se normalizan aquí dentro, así que el llamador puede
+    pasar la búsqueda tal cual la escribió el usuario."""
+    busqueda = busqueda.strip().upper()
+    if "*" in busqueda:
+        return _wildcard_contains_mask(series, busqueda)
+    serie_norm = series.astype(str).map(_sin_acentos).str.upper()
+    return serie_norm.str.contains(re.escape(_sin_acentos(busqueda)), na=False)
+
+
 @app.get("/api/analisis/signatura")
 def signatura(
     session_id: str,
@@ -716,11 +729,7 @@ def signatura(
         else:
             # Título/autor/materia: coincidencia "contiene" (con soporte de
             # comodín "*" si el usuario lo usa igualmente).
-            if "*" in busqueda:
-                df = df[_wildcard_contains_mask(df[columna], busqueda)]
-            else:
-                serie_norm = df[columna].astype(str).map(_sin_acentos).str.upper()
-                df = df[serie_norm.str.contains(re.escape(_sin_acentos(busqueda)), na=False)]
+            df = df[_texto_contains_mask(df[columna], busqueda)]
 
     if categoria != "Todas":
         df = df[df["categoria"] == categoria]
@@ -880,8 +889,43 @@ def _clasificar_libro_cdu(cdu: str, todas_signaturas: str):
     return None, None
 
 
+def _ids_con_materia(conn, ids_sistema: list, busqueda: str) -> set:
+    """Devuelve el subconjunto de id_sistema cuyo registro MARC completo
+    (tabla marc_completo) contiene el texto buscado. La base de datos de
+    la red no tiene una columna "materia" propia: las materias solo viven
+    dentro del XML MARC completo (campo 650). En vez de parsear MARC campo
+    a campo para cada fila (lento si son miles), se hace una búsqueda de
+    texto simple e insensible a acentos sobre el propio marcxml guardado;
+    es una aproximación suficiente para saber si una obra trata de un tema,
+    y evita tener que traer/parsear pymarc por cada candidato.
+    Si la base de datos no tiene la tabla marc_completo, devuelve un
+    conjunto vacío (equivalente a "no hay resultados por materia")."""
+    if not ids_sistema:
+        return set()
+    try:
+        placeholders = ",".join("?" * len(ids_sistema))
+        filas = conn.execute(
+            f"SELECT id_sistema, marcxml FROM marc_completo WHERE id_sistema IN ({placeholders})",
+            ids_sistema,
+        ).fetchall()
+    except sqlite3.OperationalError:
+        return set()
+    busqueda_norm = _sin_acentos(busqueda.upper())
+    return {
+        id_sistema for id_sistema, marcxml in filas
+        if marcxml and busqueda_norm in _sin_acentos(marcxml.upper())
+    }
+
+
 @app.get("/api/recomendaciones/cdu")
-def recomendaciones_cdu(biblioteca: str, limite_cdu: int = 10, anio_minimo: int = 2015, busqueda_cdu: str = ""):
+def recomendaciones_cdu(
+    biblioteca: str,
+    limite_cdu: int = 10,
+    anio_minimo: int = 2015,
+    campo: str = "cdu",
+    busqueda: str = "",
+    busqueda_cdu: str = "",  # compatibilidad con el nombre de parámetro anterior
+):
     if biblioteca not in BIBLIOTECAS:
         raise HTTPException(status_code=400, detail="Biblioteca no reconocida.")
     conn = get_conn()
@@ -903,9 +947,22 @@ def recomendaciones_cdu(biblioteca: str, limite_cdu: int = 10, anio_minimo: int 
     if df.empty:
         return {"adultos": {}, "infantil": {}}
 
-    busqueda_cdu = busqueda_cdu.strip().upper()
-    if busqueda_cdu:
-        df = df[_wildcard_mask(df["cdu"], busqueda_cdu)]
+    # busqueda_cdu queda como alias retrocompatible: si un cliente antiguo
+    # (sin el parámetro "campo") solo manda busqueda_cdu, se busca por CDU,
+    # que ya es el valor por defecto de "campo".
+    campo = (campo or "cdu").strip().lower()
+    busqueda = (busqueda or busqueda_cdu or "").strip()
+
+    if busqueda:
+        if campo == "titulo":
+            df = df[_texto_contains_mask(df["titulo"], busqueda)]
+        elif campo == "autor":
+            df = df[_texto_contains_mask(df["autor"], busqueda)]
+        elif campo == "materia":
+            ids_ok = _ids_con_materia(conn, df["id_sistema"].tolist(), busqueda)
+            df = df[df["id_sistema"].isin(ids_ok)]
+        else:  # "cdu" por defecto
+            df = df[_wildcard_mask(df["cdu"], busqueda.upper())]
     if df.empty:
         return {"adultos": {}, "infantil": {}}
 
