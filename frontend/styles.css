@@ -195,9 +195,9 @@ select, input[type="text"], input[type="number"] {
 .video-tooltip.visible { display: block; }
 .video-tooltip video {
   display: block;
-  width: 62.5vw;
-  min-width: 400px;
-  max-width: 1025px;
+  width: min(125vw, 96vw);
+  min-width: 800px;
+  max-width: 2050px;
   border-radius: 2px;
   background: #000;
 }
@@ -207,9 +207,9 @@ select, input[type="text"], input[type="number"] {
   font-size: 0.68rem;
   color: var(--ink-soft);
   text-align: center;
-  width: 62.5vw;
-  min-width: 400px;
-  max-width: 1025px;
+  width: min(125vw, 96vw);
+  min-width: 800px;
+  max-width: 2050px;
 }
 .video-tooltip.video-error video { display: none; }
 .video-tooltip.video-error .video-tooltip-caption {
